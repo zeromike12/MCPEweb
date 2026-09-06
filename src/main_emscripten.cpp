@@ -267,17 +267,34 @@ int main(int argc, char* argv[]) {
 
     // Mount IDBFS at the saves folder so worlds persist across page reloads
     EM_ASM({
-        FS.mkdir('/games', 0777);
-        FS.mount(IDBFS, {}, '/games');
+        try {
+            if (!FS.analyzePath('/games').exists) {
+                FS.mkdir('/games', 0777);
+            }
+        } catch (e) {
+            console.warn('mkdir /games error:', e);
+        }
+        try {
+            FS.mount(IDBFS, {}, '/games');
+        } catch (e) {
+            console.warn('IDBFS mount warning:', e);
+        }
 
         // Sync FROM IndexedDB first (load existing saves), then start game
         FS.syncfs(true, function(err) {
             if (err) console.warn('FS.syncfs load error:', err);
             // Signal C++ that the FS is ready
-            Module._idbfsReady();
+            if (typeof Module._idbfsReady === 'function') {
+                Module._idbfsReady();
+            } else if (typeof _idbfsReady === 'function') {
+                _idbfsReady();
+            } else {
+                console.error('idbfsReady function not found!');
+            }
         });
     });
 
+    emscripten_exit_with_live_runtime();
     return 0; // actual init continues in idbfsReady()
 }
 
