@@ -171,8 +171,9 @@ public:
     static Item* slimeBall;
     static Item* minecart_chest;
     static Item* minecart_furnace;
-    static Item* egg;
-    static Item* compass;
+	static Item* egg;
+	static Item* spawn_egg;
+	static Item* compass;
     static Item* fishingRod;
     static Item* clock;
     static Item* yellowDust;

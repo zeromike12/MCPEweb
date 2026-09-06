@@ -124,6 +124,7 @@ Item* Item::slimeBall = NULL;
 //Item* Item::minecart_chest = NULL;
 //Item* Item::minecart_furnace = NULL;
 Item* Item::egg = NULL;
+Item* Item::spawn_egg = NULL;
 Item* Item::compass = NULL;
 //Item* Item::fishingRod = NULL;
 Item* Item::clock = NULL;
@@ -260,6 +261,7 @@ void Item::initItems() {
 	//Item::minecart_chest = (new MinecartItem(86, Minecart::CHEST))->setIcon(7, 9)->setCategory(ItemCategory::Mechanisms)->setDescriptionId("minecartChest");
 	//Item::minecart_furnace = (new MinecartItem(87, Minecart::FURNACE))->setIcon(7, 10)->setCategory(ItemCategory::Mechanisms)->setDescriptionId("minecartFurnace");
 	Item::egg = (new EggItem(88))->setIcon(12, 0)->setCategory(ItemCategory::FoodArmor)->setDescriptionId("egg");
+	Item::spawn_egg = (new SpawnEggItem(200))->setIcon(13, 3)->setCategory(ItemCategory::Tools)->setDescriptionId("spawnEgg");
 	Item::compass = (new Item(89))->setIcon(6, 3)->setCategory(ItemCategory::Tools)->setDescriptionId("compass");
 	//Item::fishingRod = (new FishingRodItem(90))->setIcon(5, 4)->setCategory(ItemCategory::Tools)->setDescriptionId("fishingRod");
 	Item::clock = (new Item(91))->setIcon(6, 4)->setCategory(ItemCategory::Tools)->setDescriptionId("clock");

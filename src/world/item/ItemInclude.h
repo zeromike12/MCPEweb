@@ -9,6 +9,7 @@
 #include "EggItem.h"
 #include "FlintAndSteelItem.h"
 #include "SnowballItem.h"
+#include "SpawnEggItem.h"
 #include "TilePlanterItem.h"
 
 #include "AuxDataTileItem.h"
