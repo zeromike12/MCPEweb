@@ -1,0 +1,10 @@
+# Emscripten build outputs
+project/emscripten/obj/
+project/emscripten/*.o
+project/emscripten/*.rsp
+project/emscripten/link.rsp
+project/emscripten/index.html
+project/emscripten/index.js
+project/emscripten/index.wasm
+project/emscripten/build*.log
+project/emscripten/build_output*.txt

@@ -1,13 +1,24 @@
-# Minecraft Pocket Edition 0.6.1 Alpha (Web Assembly / emscripten / WASM port)
+# Minecraft Web Build
 
-Fully playable Minecraft PE 0.6.1 alpha in the browser with full multi-touch support, keyboard and mouse inputs, offline PWA support, and local storage map saves & Audio.
+## Dependencies
 
-[**PLAY NOW**](https://sangraphic.github.io/MCPEweb/)
+- **Git** – to clone emsdk
+- **Python 3** – used by emsdk
+- **PowerShell** – for build and install scripts
+- **Emscripten SDK** – C/C++ to WebAssembly toolchain (installed by script)
 
+## Install Dependencies
+
+```powershell
+.\install_deps.ps1
+```
+
+This clones emsdk into the parent directory (if missing) and installs/activates the latest toolchain.
 
 ## Build
 
-1. Install dependencies: `.\install_deps.ps1`
-2. Build: `.\build.ps1`
+```powershell
+.\build.ps1
+```
 
-Output: `project/emscripten/index.html`, `index.js`, `index.wasm`. Serve that folder to run.
+Output: `project/emscripten/index.html`, `index.js`, `index.wasm`. Serve that folder with a local web server to run the game.
