@@ -254,6 +254,18 @@ void Inventory::setupDefault() {
 #endif
 		addItem(new ItemInstance(Item::bow));
 		addItem(new ItemInstance(Item::sign));
+
+		// Spawn eggs: keep these in the creative inventory so both the
+		// desktop and touch creative menus expose every MobFactory mob.
+		addItem(new ItemInstance(Item::spawnEggChicken));
+		addItem(new ItemInstance(Item::spawnEggCow));
+		addItem(new ItemInstance(Item::spawnEggPig));
+		addItem(new ItemInstance(Item::spawnEggSheep));
+		addItem(new ItemInstance(Item::spawnEggCreeper));
+		addItem(new ItemInstance(Item::spawnEggZombie));
+		addItem(new ItemInstance(Item::spawnEggSkeleton));
+		addItem(new ItemInstance(Item::spawnEggSpider));
+		addItem(new ItemInstance(Item::spawnEggPigZombie));
 	} else {
 #if defined(WIN32)
 		// Survival

@@ -148,6 +148,16 @@ Item* Item::beef_cooked = NULL;
 Item* Item::chicken_raw = NULL;
 Item* Item::chicken_cooked = NULL;
 
+Item* Item::spawnEggChicken = NULL;
+Item* Item::spawnEggCow = NULL;
+Item* Item::spawnEggPig = NULL;
+Item* Item::spawnEggSheep = NULL;
+Item* Item::spawnEggCreeper = NULL;
+Item* Item::spawnEggZombie = NULL;
+Item* Item::spawnEggSkeleton = NULL;
+Item* Item::spawnEggSpider = NULL;
+Item* Item::spawnEggPigZombie = NULL;
+
 Item* Item::netherbrick = NULL;
 Item* Item::netherQuartz = NULL;
 
@@ -279,6 +289,18 @@ void Item::initItems() {
 	Item::beef_cooked = (new FoodItem(108, 8, /*FoodConstants.FOOD_SATURATION_GOOD,*/ true))->setIcon(10, 6)->setCategory(ItemCategory::FoodArmor)->setDescriptionId("beefCooked");
 	Item::chicken_raw = (new FoodItem(109, 2, /*FoodConstants.FOOD_SATURATION_LOW,*/ true))->setIcon(9, 7)->setCategory(ItemCategory::FoodArmor)->setDescriptionId("chickenRaw");
 	Item::chicken_cooked = (new FoodItem(110, 6, /*FoodConstants.FOOD_SATURATION_NORMAL,*/ true))->setIcon(10, 7)->setCategory(ItemCategory::FoodArmor)->setDescriptionId("chickenCooked");
+
+	// Keep these IDs in the unused item range immediately after the existing
+	// food items. The icon row is reserved for the spawn-egg sprites.
+	Item::spawnEggChicken = (new SpawnEggItem(111, MobTypes::Chicken))->setIcon(224)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggChicken");
+	Item::spawnEggCow = (new SpawnEggItem(112, MobTypes::Cow))->setIcon(225)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggCow");
+	Item::spawnEggPig = (new SpawnEggItem(113, MobTypes::Pig))->setIcon(226)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggPig");
+	Item::spawnEggSheep = (new SpawnEggItem(114, MobTypes::Sheep))->setIcon(227)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggSheep");
+	Item::spawnEggCreeper = (new SpawnEggItem(115, MobTypes::Creeper))->setIcon(228)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggCreeper");
+	Item::spawnEggZombie = (new SpawnEggItem(116, MobTypes::Zombie))->setIcon(229)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggZombie");
+	Item::spawnEggSkeleton = (new SpawnEggItem(117, MobTypes::Skeleton))->setIcon(230)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggSkeleton");
+	Item::spawnEggSpider = (new SpawnEggItem(118, MobTypes::Spider))->setIcon(231)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggSpider");
+	Item::spawnEggPigZombie = (new SpawnEggItem(119, MobTypes::PigZombie))->setIcon(232)->setCategory(ItemCategory::Decorations)->setDescriptionId("spawnEggPigZombie");
 
 	Item::netherbrick = (new Item(149))->setIcon(5, 9)->setDescriptionId("netherbrickItem")->setCategory(ItemCategory::Structures);
 	Item::netherQuartz = (new Item(150))->setIcon(5, 10)->setDescriptionId("netherquartz")->setCategory(ItemCategory::Mechanisms);

@@ -198,6 +198,17 @@ public:
 	static Item* chicken_raw;
 	static Item* chicken_cooked;
 
+	// Spawn eggs for every mob currently registered with MobFactory.
+	static Item* spawnEggChicken;
+	static Item* spawnEggCow;
+	static Item* spawnEggPig;
+	static Item* spawnEggSheep;
+	static Item* spawnEggCreeper;
+	static Item* spawnEggZombie;
+	static Item* spawnEggSkeleton;
+	static Item* spawnEggSpider;
+	static Item* spawnEggPigZombie;
+
 	static Item* netherbrick;
 	static Item* netherQuartz;
 
