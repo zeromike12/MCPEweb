@@ -1208,24 +1208,14 @@ void Minecraft::setSize(int w, int h) {
 	width  = w;
 	height = h;
 
-	if (width >= 1000) {
-#if defined(__APPLE__) || defined(EMSCRIPTEN)
-            Gui::GuiScale = (width > 2000)? 8.0f : 4.0f;
-#else
-            Gui::GuiScale = 4.0f;
-#endif
+    // Responsive GUI scale calculation suitable for mobile, tablet, and desktop displays
+    int scale = 1;
+    while (width / (scale + 1) >= 320 && height / (scale + 1) >= 220) {
+        scale++;
     }
-	else if (width >= 800) {
-#if defined(__APPLE__) || defined(EMSCRIPTEN)
-        Gui::GuiScale = 4.0f;
-#else
-		Gui::GuiScale = 3.0f;
-#endif
-    }
-	else if (width >= 400)
-		Gui::GuiScale = 2.0f;
-	else
-		Gui::GuiScale = 1.0f;
+    if (scale < 1) scale = 1;
+    if (scale > 4) scale = 4;
+    Gui::GuiScale = (float)scale;
 
 	Gui::InvGuiScale = 1.0f / Gui::GuiScale;
 	int screenWidth  = (int)(width  * Gui::InvGuiScale);
