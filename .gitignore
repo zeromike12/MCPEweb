@@ -6,5 +6,6 @@ project/emscripten/link.rsp
 project/emscripten/index.html
 project/emscripten/index.js
 project/emscripten/index.wasm
+project/emscripten/index.data
 project/emscripten/build*.log
 project/emscripten/build_output*.txt

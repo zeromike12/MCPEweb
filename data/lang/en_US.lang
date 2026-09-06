@@ -257,6 +257,7 @@ tile.chest.name=Chest
 tile.redstoneDust.name=Redstone Dust
 tile.oreDiamond.name=Diamond Ore
 tile.blockDiamond.name=Block of Diamond
+tile.blockNetherite.name=Block of Netherite
 tile.workbench.name=Crafting Table
 tile.crops.name=Crops
 tile.farmland.name=Farmland

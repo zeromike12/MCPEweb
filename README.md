@@ -17,8 +17,18 @@ This clones emsdk into the parent directory (if missing) and installs/activates 
 
 ## Build
 
+### Windows (PowerShell)
 ```powershell
 .\build.ps1
 ```
 
-Output: `project/emscripten/index.html`, `index.js`, `index.wasm`. Serve that folder with a local web server to run the game.
+### Linux / macOS
+```bash
+./build.sh
+```
+or
+```bash
+python3 project/emscripten/build_web.py
+```
+
+Output: `project/emscripten/index.html`, `index.js`, `index.wasm`, `index.data`. Serve that folder with a local web server to run the game.
