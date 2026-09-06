@@ -238,6 +238,26 @@ static const int PKTableViewMinTouchDurationForCellSelection = 150;
 
 void ScrollingPane::handleUserInput() {
 
+	// Support mouse wheel / touchpad scrolling
+	while (Mouse::next()) {
+		const MouseAction& me = Mouse::getEvent();
+		if (me.action == MouseAction::ACTION_WHEEL && area.isInside(me.x * invScreenScale, me.y * invScreenScale)) {
+			float scrollAmount = (float)me.dy * (float)itemBbox.h;
+			if (isNotSet(SF_LockY)) {
+				this->adjustContentSize();
+				float minY = Mth::Min(0.0f, (float)(this->size.h - this->adjustedContentSize.h));
+				float newY = Mth::Min(0.0f, Mth::Max(minY, this->_contentOffset.y + scrollAmount));
+				this->setContentOffset(this->_contentOffset.x, newY);
+			} else if (isNotSet(SF_LockX)) {
+				this->adjustContentSize();
+				float minX = Mth::Min(0.0f, (float)(this->size.w - this->adjustedContentSize.w));
+				float newX = Mth::Min(0.0f, Mth::Max(minX, this->_contentOffset.x + scrollAmount));
+				this->setContentOffset(newX, this->_contentOffset.y);
+			}
+		}
+	}
+	Mouse::rewind();
+
 	bool isDown = Mouse::isButtonDown(MouseAction::ACTION_LEFT);
 	float x = Mouse::getX() * invScreenScale;
 	float y = Mouse::getY() * invScreenScale;
@@ -277,7 +297,11 @@ void ScrollingPane::beginTracking(float x, float y, int t) { //@param 1: MouseEv
 	this->stopDecelerationAnimation();
 	//this->hostingLayer.style.webkitTransitionDuration = 0;
 	this->adjustContentSize(); //@todo @?
-	this->minPoint.set((float)(this->size.w - this->adjustedContentSize.w), (float)(this->size.h - this->adjustedContentSize.h), 0); //@todo
+	this->minPoint.set(
+		Mth::Min(0.0f, (float)(this->size.w - this->adjustedContentSize.w)),
+		Mth::Min(0.0f, (float)(this->size.h - this->adjustedContentSize.h)),
+		0
+	);
 	this->snapContentOffsetToBounds(false);
 	this->startPosition = this->_contentOffset;
 	this->startTouchPosition.set(x, y, 0);
@@ -360,6 +384,7 @@ void ScrollingPane::touchesMoved(float x, float y, int t)
 		}
 		if (this->firstDrag) {
 			this->firstDrag = false;
+			this->startPosition = this->_contentOffset;
 			this->startTouchPosition = e;
 			return;
 		}
@@ -375,6 +400,7 @@ void ScrollingPane::touchesEnded(float x, float y, int t) {
 
 	//this.callSuper(a);
 	this->tracking = false;
+	bool wasDragging = this->dragging;
 	if (this->dragging) {
 		this->dragging = false;
 		//a.stopPropagation();
@@ -395,17 +421,10 @@ void ScrollingPane::touchesEnded(float x, float y, int t) {
 			this->hideScrollIndicators();
 		}
 	}
-	//if (a.eventPhase == Event.BUBBLING_PHASE) { //@? @todo
-	//	window.removeEventListener(PKEndEvent, this, false);
-
-		//// old and shaky, doesn't work good with Xperia Play (and presumably lots of others)
-		//if (!this->touchesHaveMoved && this->highlightItem.id >= 0) {
-		//	_onSelect(this->highlightItem.id);
-		//}
-		if (Vec3(x, y, 0).distanceToSqr(startTouchPosition) <= 6.0f * 6.0f && this->highlightItem.id >= 0) {
-			_onSelect(this->highlightItem.id);
-		}
-	//}
+	// Only trigger selection when user tapped without dragging the list
+	if (!wasDragging && Vec3(x, y, 0).distanceToSqr(startTouchPosition) <= 6.0f * 6.0f && this->highlightItem.id >= 0) {
+		_onSelect(this->highlightItem.id);
+	}
 	te_moved = 0;
 };
 

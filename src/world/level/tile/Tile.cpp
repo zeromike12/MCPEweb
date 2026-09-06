@@ -112,6 +112,7 @@ Tile* Tile::invisible_bedrock = NULL;
 Tile* Tile::goldBlock   = NULL;
 Tile* Tile::ironBlock   = NULL;
 Tile* Tile::emeraldBlock= NULL;
+Tile* Tile::netheriteBlock= NULL;
 Tile* Tile::workBench   = NULL;
 Tile* Tile::stonecutterBench = NULL;
 Tile* Tile::crops		= NULL;
@@ -258,6 +259,7 @@ void Tile::initTiles() {
 	//
 	// Special tiles for Pocket Edition is placed at high IDs
 	//
+	netheriteBlock  = (new MetalTile(240, 180))->init()->setDestroyTime(5.0f)->setExplodeable(1200)->setSoundType(SOUND_METAL)->setCategory(ItemCategory::Decorations)->setDescriptionId("blockNetherite");
 	stonecutterBench= (new StonecutterTile(245))->init()->setDestroyTime(2.5f)->setSoundType(SOUND_STONE)->setCategory(ItemCategory::Structures)->setDescriptionId("stonecutter");
 	glowingObsidian = (new ObsidianTile(246, 10 + 16 * 13, true))->init()->setDestroyTime(10.0f)->setLightEmission(14 / 16.0f)->setExplodeable(2000)->setSoundType(SOUND_STONE)->setCategory(ItemCategory::Structures)->setDescriptionId("glowingobsidian");
 	netherReactor	= (new NetherReactor(247, 10  + 14 * 16, Material::metal))->init()->setDestroyTime(3.0f)->setSoundType(SOUND_METAL)->setCategory(ItemCategory::Structures)->setDescriptionId("netherreactor");

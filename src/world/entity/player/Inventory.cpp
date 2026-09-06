@@ -105,6 +105,7 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Tile::goldBlock));
 		addItem(new ItemInstance(Tile::ironBlock));
 		addItem(new ItemInstance(Tile::emeraldBlock));
+		addItem(new ItemInstance(Tile::netheriteBlock));
 		addItem(new ItemInstance(Tile::lapisBlock));
 		addItem(new ItemInstance(Tile::obsidian));
 		addItem(new ItemInstance((Tile*)Tile::leaves, 1, 0));
@@ -180,6 +181,7 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Tile::goldBlock));
 		addItem(new ItemInstance(Tile::ironBlock));
 		addItem(new ItemInstance(Tile::emeraldBlock));
+		addItem(new ItemInstance(Tile::netheriteBlock));
 		addItem(new ItemInstance(Tile::lapisBlock));
 		addItem(new ItemInstance(Tile::obsidian));
 		addItem(new ItemInstance(Tile::snow));

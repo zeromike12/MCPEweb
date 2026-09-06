@@ -18,6 +18,7 @@ PickaxeItem::PickaxeItem( int id, const Tier& tier ) :   super(id, 2, tier)
 	d.push_back(Tile::goldOre);
 	d.push_back(Tile::emeraldOre);
 	d.push_back(Tile::emeraldBlock);
+	d.push_back(Tile::netheriteBlock);
 	d.push_back(Tile::ice);
 	//d.push_back(Tile::hellRock);
 	d.push_back(Tile::lapisOre);
@@ -34,6 +35,7 @@ PickaxeItem::PickaxeItem( int id, const Tier& tier ) :   super(id, 2, tier)
 bool PickaxeItem::canDestroySpecial( const Tile* tile ) const
 {
 	if (tile == Tile::obsidian) return tier.getLevel() == 3;
+	if (tile == Tile::netheriteBlock) return tier.getLevel() >= 3;
 	if (tile == Tile::emeraldBlock || tile == Tile::emeraldOre) return tier.getLevel() >= 2;
 	if (tile == Tile::goldBlock || tile == Tile::goldOre) return tier.getLevel() >= 2;
 	if (tile == Tile::ironBlock || tile == Tile::ironOre) return tier.getLevel() >= 1;

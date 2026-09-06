@@ -89,6 +89,45 @@ extern "C" void EMSCRIPTEN_KEEPALIVE syncSaves() {
     });
 }
 
+// Touch tracking for multitouch support
+static SDL_FingerID s_touchSlots[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
+static bool s_touchActive[8] = {false, false, false, false, false, false, false, false};
+
+static int getOrAllocTouchSlot(SDL_FingerID fingerId) {
+    for (int i = 0; i < 8; ++i) {
+        if (s_touchActive[i] && s_touchSlots[i] == fingerId) {
+            return i;
+        }
+    }
+    for (int i = 0; i < 8; ++i) {
+        if (!s_touchActive[i]) {
+            s_touchActive[i] = true;
+            s_touchSlots[i] = fingerId;
+            return i;
+        }
+    }
+    return 0;
+}
+
+static int getTouchSlot(SDL_FingerID fingerId) {
+    for (int i = 0; i < 8; ++i) {
+        if (s_touchActive[i] && s_touchSlots[i] == fingerId) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+static void releaseTouchSlot(SDL_FingerID fingerId) {
+    for (int i = 0; i < 8; ++i) {
+        if (s_touchActive[i] && s_touchSlots[i] == fingerId) {
+            s_touchActive[i] = false;
+            s_touchSlots[i] = -1;
+            return;
+        }
+    }
+}
+
 void main_loop() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -171,30 +210,42 @@ void main_loop() {
 
             // --- Multitouch Support ---
             case SDL_FINGERDOWN: {
-                int id = (int)(event.tfinger.fingerId % 8); // Keep 0-7, 8 is used for kb look
+                int slot = getOrAllocTouchSlot(event.tfinger.fingerId);
                 int gx = (int)(event.tfinger.x * g_screenW);
                 int gy = (int)(event.tfinger.y * g_screenH);
-                Multitouch::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_DOWN, gx, gy, id);
-                // All touches act as mouse clicks for the UI (fixes Create World button on touch)
-                Mouse::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_DOWN, gx, gy);
+                Multitouch::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_DOWN, (short)gx, (short)gy, (char)slot);
+                if (slot == 0 || !Mouse::isButtonDown(MouseAction::ACTION_LEFT)) {
+                    Mouse::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_DOWN, (short)gx, (short)gy);
+                }
+                g_mouseX = gx;
+                g_mouseY = gy;
                 break;
             }
 
             case SDL_FINGERUP: {
-                int id = (int)(event.tfinger.fingerId % 8);
+                int slot = getTouchSlot(event.tfinger.fingerId);
                 int gx = (int)(event.tfinger.x * g_screenW);
                 int gy = (int)(event.tfinger.y * g_screenH);
-                Multitouch::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_UP, gx, gy, id);
-                Mouse::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_UP, gx, gy);
+                Multitouch::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_UP, (short)gx, (short)gy, (char)slot);
+                if (slot == 0 || !Multitouch::isPointerDown(0)) {
+                    Mouse::feed(MouseAction::ACTION_LEFT, MouseAction::DATA_UP, (short)gx, (short)gy);
+                }
+                releaseTouchSlot(event.tfinger.fingerId);
                 break;
             }
 
             case SDL_FINGERMOTION: {
-                int id = (int)(event.tfinger.fingerId % 8);
+                int slot = getTouchSlot(event.tfinger.fingerId);
                 int gx = (int)(event.tfinger.x * g_screenW);
                 int gy = (int)(event.tfinger.y * g_screenH);
-                Multitouch::feed(MouseAction::ACTION_MOVE, 0, gx, gy, id);
-                Mouse::feed(MouseAction::ACTION_MOVE, 0, gx, gy, 0, 0);
+                short dx = (short)(event.tfinger.dx * g_screenW);
+                short dy = (short)(event.tfinger.dy * g_screenH);
+                Multitouch::feed(MouseAction::ACTION_MOVE, 0, (short)gx, (short)gy, (char)slot);
+                if (slot == 0) {
+                    Mouse::feed(MouseAction::ACTION_MOVE, 0, (short)gx, (short)gy, dx, dy);
+                    g_mouseX = gx;
+                    g_mouseY = gy;
+                }
                 break;
             }
         }
@@ -204,9 +255,6 @@ void main_loop() {
     g_pointerLocked = EM_ASM_INT({
         return (document.pointerLockElement != null) ? 1 : 0;
     }) != 0;
-
-    // Commit multitouch events each frame
-    Multitouch::commit();
 
     if (g_app->wantToQuit()) {
         emscripten_cancel_main_loop();
@@ -267,17 +315,34 @@ int main(int argc, char* argv[]) {
 
     // Mount IDBFS at the saves folder so worlds persist across page reloads
     EM_ASM({
-        FS.mkdir('/games', 0777);
-        FS.mount(IDBFS, {}, '/games');
+        try {
+            if (!FS.analyzePath('/games').exists) {
+                FS.mkdir('/games', 0777);
+            }
+        } catch (e) {
+            console.warn('mkdir /games error:', e);
+        }
+        try {
+            FS.mount(IDBFS, {}, '/games');
+        } catch (e) {
+            console.warn('IDBFS mount warning:', e);
+        }
 
         // Sync FROM IndexedDB first (load existing saves), then start game
         FS.syncfs(true, function(err) {
             if (err) console.warn('FS.syncfs load error:', err);
             // Signal C++ that the FS is ready
-            Module._idbfsReady();
+            if (typeof Module._idbfsReady === 'function') {
+                Module._idbfsReady();
+            } else if (typeof _idbfsReady === 'function') {
+                _idbfsReady();
+            } else {
+                console.error('idbfsReady function not found!');
+            }
         });
     });
 
+    emscripten_exit_with_live_runtime();
     return 0; // actual init continues in idbfsReady()
 }
 

@@ -172,6 +172,7 @@ public:
     static Tile* redStoneDust;
     static Tile* emeraldOre;
     static Tile* emeraldBlock;
+    static Tile* netheriteBlock;
     static Tile* workBench;
 	static Tile* stonecutterBench;
     static Tile* crops;
