@@ -107,3 +107,10 @@ if res.returncode != 0:
     sys.exit(res.returncode)
 
 print("Build complete: index.html, index.js, index.wasm, index.data created!")
+
+import shutil
+for f in ["index.html", "index.js", "index.wasm", "index.data", "manifest.json", "sw.js", "mc_platform.js"]:
+    src_f = os.path.join(SCRIPT_DIR, f)
+    if os.path.exists(src_f):
+        shutil.copy2(src_f, os.path.join(PROJECT_ROOT, f))
+print("Synchronized playable game build to repository root.")
