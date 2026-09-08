@@ -33,7 +33,8 @@ public:
 		last(NULL),
 		level(level_),
 		storage(storage_),
-		source(source_)
+		source(source_),
+		isPostProcessing(false)
 	{
 		isChunkCache = true;
 		emptyChunk = new EmptyLevelChunk(level_, NULL, 0, 0);
@@ -131,10 +132,14 @@ public:
 
             newChunk->load();
 
-            if (!newChunk->terrainPopulated && hasChunk(x + 1, z + 1) && hasChunk(x, z + 1) && hasChunk(x + 1, z)) postProcess(this, x, z);
-            if (hasChunk(x - 1, z) && !getChunk(x - 1, z)->terrainPopulated && hasChunk(x - 1, z + 1) && hasChunk(x, z + 1) && hasChunk(x - 1, z)) postProcess(this, x - 1, z);
-            if (hasChunk(x, z - 1) && !getChunk(x, z - 1)->terrainPopulated && hasChunk(x + 1, z - 1) && hasChunk(x, z - 1) && hasChunk(x + 1, z)) postProcess(this, x, z - 1);
-            if (hasChunk(x - 1, z - 1) && !getChunk(x - 1, z - 1)->terrainPopulated && hasChunk(x - 1, z - 1) && hasChunk(x, z - 1) && hasChunk(x - 1, z)) postProcess(this, x - 1, z - 1);
+            if (!isPostProcessing) {
+                isPostProcessing = true;
+                if (!newChunk->terrainPopulated && hasChunk(x + 1, z + 1) && hasChunk(x, z + 1) && hasChunk(x + 1, z)) postProcess(this, x, z);
+                if (hasChunk(x - 1, z) && !getChunk(x - 1, z)->terrainPopulated && hasChunk(x - 1, z + 1) && hasChunk(x, z + 1) && hasChunk(x - 1, z)) postProcess(this, x - 1, z);
+                if (hasChunk(x, z - 1) && !getChunk(x, z - 1)->terrainPopulated && hasChunk(x + 1, z - 1) && hasChunk(x, z - 1) && hasChunk(x + 1, z)) postProcess(this, x, z - 1);
+                if (hasChunk(x - 1, z - 1) && !getChunk(x - 1, z - 1)->terrainPopulated && hasChunk(x - 1, z - 1) && hasChunk(x, z - 1) && hasChunk(x - 1, z)) postProcess(this, x - 1, z - 1);
+                isPostProcessing = false;
+            }
         }
 
         xLast = x;
@@ -218,6 +223,7 @@ private:
     Level* level;
 
     LevelChunk* last;
+    bool isPostProcessing;
 };
 
 #endif /*NET_MINECRAFT_WORLD_LEVEL_CHUNK__ChunkCache_H__*/

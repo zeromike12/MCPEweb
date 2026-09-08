@@ -482,22 +482,17 @@ void Minecraft::update() {
 	for (int i = 0; i < toTick; ++i, ++ticks)
 		tick(i, toTick-1);
 
-	LOGI("update: after tick\n");
 	TIMER_POP_PUSH("updatelights");
 	if (level && !isGeneratingLevel) {
-		LOGI("update: level->updateLights\n");
 		level->updateLights();
 	}
 	TIMER_POP();
 
 	#ifndef STANDALONE_SERVER
-		LOGI("update: gameMode->render\n");
 		if (gameMode != NULL) gameMode->render(timer.a);
 		TIMER_PUSH("sound");
-		LOGI("update: soundEngine->update\n");
 		soundEngine->update(player, timer.a);
 		TIMER_POP_PUSH("render");
-		LOGI("update: gameRenderer->render\n");
 		gameRenderer->render(timer.a);
 		TIMER_POP();
 	#else
@@ -573,24 +568,19 @@ void Minecraft::tick(int nTick, int maxTick) {
 	//
 	if (level != NULL)
 	{
-		LOGI("tick: In normal game loop\n");
 		if (!pause) {
 #ifndef STANDALONE_SERVER
 			TIMER_POP_PUSH("gameRenderer");
-			LOGI("tick: gameRenderer->tick\n");
 			gameRenderer->tick(nTick, maxTick);
 
 			TIMER_POP_PUSH("levelRenderer");
-			LOGI("tick: levelRenderer->tick\n");
 			levelRenderer->tick();
 #endif
 			level->difficulty = options.difficulty;
 			if (level->isClientSide) level->difficulty = Difficulty::EASY;
 
 			TIMER_POP_PUSH("level");
-			LOGI("tick: level->tickEntities\n");
 			level->tickEntities();
-			LOGI("tick: level->tick\n");
 			level->tick();
 #ifndef STANDALONE_SERVER
 			TIMER_POP_PUSH("animateTick");
@@ -616,11 +606,9 @@ void Minecraft::tick(int nTick, int maxTick) {
 		#endif
 	}
 	TIMER_POP_PUSH("particles");
-	LOGI("tick: particleEngine->tick\n");
 	particleEngine->tick();
 	if (screen) {
 		screenMutex = true;
-		LOGI("tick: screen->tick\n");
 		screen->tick();
 		screenMutex = false;
 	}

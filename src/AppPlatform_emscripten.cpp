@@ -4,11 +4,11 @@
 // Query the actual browser window / canvas size at call time so the game
 // always knows the real render resolution instead of using a fixed value.
 int AppPlatform_emscripten::getScreenWidth() {
-    int w = EM_ASM_INT({ return window.innerWidth; });
+    int w = EM_ASM_INT({ return Math.round(window.innerWidth * (window.devicePixelRatio || 1)); });
     return (w > 0) ? w : 854;
 }
 int AppPlatform_emscripten::getScreenHeight() {
-    int h = EM_ASM_INT({ return window.innerHeight; });
+    int h = EM_ASM_INT({ return Math.round(window.innerHeight * (window.devicePixelRatio || 1)); });
     return (h > 0) ? h : 480;
 }
 
