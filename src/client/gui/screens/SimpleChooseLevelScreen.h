@@ -23,6 +23,7 @@ public:
 private:
 	Button* bCreative;
 	Button* bSurvival;
+	Button* bRpg;
 	Button* bBack;
 	bool hasChosen;
 
