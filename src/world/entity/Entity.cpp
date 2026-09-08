@@ -60,7 +60,8 @@ Entity::Entity( Level* level )
 	entityRendererId(ER_DEFAULT_RENDERER),
 	nextStep(1),
 	makeStepSound(true),
-	invisible(false)
+	invisible(false),
+	inPortal(false)
 {
 	_init();
 

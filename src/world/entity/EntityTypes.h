@@ -67,7 +67,8 @@ struct ParticleType {
 		iconcrack,
 		snowballpoof,
 		largeexplode,
-		hugeexplosion
+		hugeexplosion,
+		portal
 	};
 };
 

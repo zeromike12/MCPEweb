@@ -98,6 +98,8 @@
 #include "renderer/ItemInHandRenderer.h"
 #include "renderer/LevelRenderer.h"
 #include "renderer/entity/EntityRenderDispatcher.h"
+#include "../world/level/portal/PortalForcer.h"
+#include "../world/level/dimension/Dimension.h"
 #include "gui/Screen.h"
 #include "gui/Font.h"
 #include "gui/screens/RenameMPLevelScreen.h"
@@ -134,6 +136,9 @@ bool Minecraft::useAmbientOcclusion = false;
 Minecraft::Minecraft()
 :	user(NULL),
 	level(NULL),
+	overworldLevel(NULL),
+	netherLevel(NULL),
+	currentSettings(LevelSettings::None()),
 	player(NULL),
 	cameraTargetPlayer(NULL),
 	levelRenderer(NULL),
@@ -256,6 +261,12 @@ Minecraft::~Minecraft()
 // Only called by server
 void Minecraft::selectLevel( const std::string& levelId, const std::string& levelName, const LevelSettings& settings )
 {
+	currentLevelId = levelId;
+	currentLevelName = levelName;
+	currentSettings = settings;
+	overworldLevel = NULL;
+	netherLevel = NULL;
+
 #if defined(CREATORMODE)
 	level = new CreatorLevel(
 #else
@@ -266,11 +277,99 @@ void Minecraft::selectLevel( const std::string& levelId, const std::string& leve
 		settings,
 		SharedConstants::GeneratorVersion);
 
+	overworldLevel = level;
+
 	// note: settings is useless beyond this point, since it's
 	//       either copied to LevelData (or LevelData read from file)
 	setLevel(level, "Generating level");
 	setIsCreativeMode(level->getLevelData()->getGameType() == GameType::Creative);
 	_running = true;
+}
+
+void Minecraft::toggleDimension() {
+	if (level && level->dimension) {
+		int targetDim = (level->dimension->id == Dimension::NETHER ? Dimension::NORMAL : Dimension::NETHER);
+		switchDimension(targetDim);
+	}
+}
+
+void Minecraft::switchDimension(int targetDim) {
+	LOGI("Minecraft::switchDimension -> %d\n", targetDim);
+	if (!player || !level) return;
+
+	// Save current level state
+	if (level->getChunkSource()) {
+		level->getChunkSource()->saveAll(true);
+	}
+	level->saveLevelData();
+
+	float startX = player->x;
+	float startZ = player->z;
+	float targetX = (targetDim == Dimension::NETHER) ? (startX / 8.0f) : (startX * 8.0f);
+	float targetZ = (targetDim == Dimension::NETHER) ? (startZ / 8.0f) : (startZ * 8.0f);
+
+	Level* oldLevel = level;
+	Level* nextLevel = NULL;
+
+	if (targetDim == Dimension::NETHER) {
+		overworldLevel = oldLevel;
+		if (netherLevel == NULL) {
+			Dimension* netherDim = Dimension::getNew(Dimension::NETHER);
+			netherLevel = new ServerLevel(
+				storageSource->selectLevel(currentLevelId, false),
+				currentLevelName,
+				currentSettings,
+				SharedConstants::GeneratorVersion,
+				netherDim
+			);
+			netherLevel->raknetInstance = raknetInstance;
+		}
+		nextLevel = netherLevel;
+	} else {
+		netherLevel = oldLevel;
+		if (overworldLevel == NULL) {
+			Dimension* overworldDim = DimensionFactory::createDefaultDimension(level->getLevelData());
+			overworldLevel = new ServerLevel(
+				storageSource->selectLevel(currentLevelId, false),
+				currentLevelName,
+				currentSettings,
+				SharedConstants::GeneratorVersion,
+				overworldDim
+			);
+			overworldLevel->raknetInstance = raknetInstance;
+		}
+		nextLevel = overworldLevel;
+	}
+
+	// Switch active level
+	this->level = nextLevel;
+	gameMode->initLevel(nextLevel);
+
+	// Find or create destination portal
+	float spawnX = targetX, spawnY = 64.0f, spawnZ = targetZ;
+	PortalForcer::findOrCreatePortal(nextLevel, (int)targetX, (int)targetZ, targetDim, spawnX, spawnY, spawnZ);
+
+	// Move player
+	player->setLevel(nextLevel);
+	player->dimension = targetDim;
+	player->moveTo(spawnX, spawnY, spawnZ, player->yRot, player->xRot);
+	player->resetPos(false);
+	player->portalCooldown = 100;
+	player->portalCounter = 0;
+	player->inPortal = false;
+	nextLevel->addEntity(player);
+	this->cameraTargetPlayer = player;
+
+	// Update renderers
+#ifndef STANDALONE_SERVER
+	if (levelRenderer) levelRenderer->setLevel(nextLevel);
+	if (particleEngine) particleEngine->setLevel(nextLevel);
+	EntityRenderDispatcher::getInstance()->setLevel(nextLevel);
+	TileEntityRenderDispatcher::getInstance()->setLevel(nextLevel);
+	gui.onLevelGenerated();
+#endif
+
+	LOGI("Minecraft::switchDimension finished at (%f, %f, %f)\n", spawnX, spawnY, spawnZ);
 }
 
 void Minecraft::setLevel(Level* level, const std::string& message /* ="" */, LocalPlayer* forceInsertPlayer /* = NULL */) {
@@ -345,11 +444,21 @@ void Minecraft::leaveGame(bool renameLevel /*=false*/)
 	netCallback = NULL;
 
 	LOGI("Erasing level\n");
+	if (overworldLevel != NULL && overworldLevel != level) {
+		delete overworldLevel->getLevelStorage();
+		delete overworldLevel;
+	}
+	if (netherLevel != NULL && netherLevel != level) {
+		delete netherLevel->getLevelStorage();
+		delete netherLevel;
+	}
 	if (level != NULL) {
 		delete level->getLevelStorage();
 		delete level;
 		level = NULL;
 	}
+	overworldLevel = NULL;
+	netherLevel = NULL;
 	//delete player;
 	player = NULL;
 	cameraTargetPlayer = NULL;

@@ -8,6 +8,7 @@
 #include "../Level.h"
 
 #include "Tile.h"
+#include "PortalTile.h"
 
 class FireTile: public Tile
 {
@@ -156,6 +157,9 @@ public:
     }
 
     void onPlace(Level* level, int x, int y, int z) {
+		if (PortalTile::trySpawnPortal(level, x, y, z)) {
+			return;
+		}
 		return; //@fire
         if (!level->isSolidBlockingTile(x, y - 1, z) && !isValidFireLocation(level, x, y, z)) {
             level->setTile(x, y, z, 0);

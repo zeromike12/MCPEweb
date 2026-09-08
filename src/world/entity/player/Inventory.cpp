@@ -112,6 +112,10 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Tile::netheriteBlock));
 		addItem(new ItemInstance(Tile::lapisBlock));
 		addItem(new ItemInstance(Tile::obsidian));
+		addItem(new ItemInstance(Item::flintAndSteel));
+		addItem(new ItemInstance(Tile::netherrack));
+		addItem(new ItemInstance(Tile::hellSand));
+		addItem(new ItemInstance(Tile::lightGem));
 		addItem(new ItemInstance((Tile*)Tile::leaves, 1, 0));
 		addItem(new ItemInstance((Tile*)Tile::leaves, 1, 1));
 		addItem(new ItemInstance((Tile*)Tile::leaves, 1, 2));

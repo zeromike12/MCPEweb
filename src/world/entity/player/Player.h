@@ -170,6 +170,11 @@ public:
     std::string name;
     int dimension;
 
+    int portalCounter;
+    int portalCooldown;
+    float portalTime;
+    float oPortalTime;
+
 	Abilities abilities;
 	SimpleFoodData foodData;
     //Stats stats;

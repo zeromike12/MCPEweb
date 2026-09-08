@@ -153,6 +153,8 @@ Tile* Tile::glowingObsidian = NULL;
 Tile* Tile::stairs_stoneBrickSmooth   = NULL;
 Tile* Tile::netherBrick   = NULL;
 Tile* Tile::netherrack   = NULL;
+Tile* Tile::hellSand     = NULL;
+Tile* Tile::portalTile   = NULL;
 Tile* Tile::stairs_netherBricks   = NULL;
 Tile* Tile::stairs_sandStone   = NULL;
 Tile* Tile::quartzBlock   = NULL;
@@ -234,10 +236,11 @@ void Tile::initTiles() {
 
 	fence		= (new FenceTile(85, 4))->init()->setDestroyTime(2.0f)->setExplodeable(5)->setSoundType(SOUND_WOOD)->setCategory(ItemCategory::Structures)->setDescriptionId("fence");
 
-	netherrack = (new Tile(87, 7 + 6 * 16, Material::stone))->init()->setDestroyTime(0.4f)->setSoundType(SOUND_STONE)->setDescriptionId("hellrock");
-	//hellSand = (new HellSandTile(88, 8 + 6 * 16, Material::sand))->init()->setDestroyTime(0.5f)->setSoundType(SOUND_SAND)->setDescriptionId("hellsand");
+	netherrack = (new Tile(87, 7 + 6 * 16, Material::stone))->init()->setDestroyTime(0.4f)->setSoundType(SOUND_STONE)->setCategory(ItemCategory::Structures)->setDescriptionId("hellrock");
+	hellSand = (new HellSandTile(88, 8 + 6 * 16))->init()->setDestroyTime(0.5f)->setSoundType(SOUND_SAND)->setCategory(ItemCategory::Structures)->setDescriptionId("hellsand");
 
 	lightGem	= (new LightGemTile(89, 9 + 16 * 6, Material::glass))->init()->setDestroyTime(0.3f)->setCategory(ItemCategory::Structures)->setSoundType(SOUND_GLASS)->setLightEmission(1.0f)->setDescriptionId("lightgem");
+	portalTile  = (new PortalTile(90, 14))->init()->setDestroyTime(-1.0f)->setSoundType(SOUND_GLASS)->setDescriptionId("portal");
 	invisible_bedrock = (new InvisibleTile(95, 0, Material::stone))->init()->setDestroyTime(-1)->setExplodeable(6000000);//->setSoundType(SOUND_SILENT);
 	trapdoor = (new TrapDoorTile(96, Material::wood))->init()->setDestroyTime(3.0f)->setSoundType(SOUND_WOOD)->setCategory(ItemCategory::Structures)->setDescriptionId("trapdoor");//->sendTileData();
 

@@ -14,6 +14,7 @@ class Dimension
 public:
 	static const int NORMAL = 0;
 	static const int NORMAL_DAYCYCLE = 10;
+	static const int NETHER = -1;
 
 	Dimension();
 	virtual ~Dimension();

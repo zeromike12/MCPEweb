@@ -13,11 +13,13 @@
 class OreFeature: public Feature {
     int tile;
     int count;
+    int targetTile;
 
 public:
-	OreFeature(int tile, int count) {
+	OreFeature(int tile, int count, int targetTile = 1) {
         this->tile = tile;
         this->count = count;
+        this->targetTile = targetTile;
     }
 
     bool place(Level* level, Random* random, int x, int y, int z) {
@@ -60,7 +62,7 @@ public:
                             for (int z2 = zt0; z2 <= zt1; z2++) {
                                 float zd = ((z2 + 0.5f) - zz) / (r / 2);
                                 if (xd * xd + yd * yd + zd * zd < 1) {
-                                    if (level->getTile(x2, y2, z2) == Tile::rock->id) level->setTileNoUpdate(x2, y2, z2, tile);
+                                    if (level->getTile(x2, y2, z2) == targetTile) level->setTileNoUpdate(x2, y2, z2, tile);
                                 }
                             }
                         }

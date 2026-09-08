@@ -1,5 +1,6 @@
 #include "Dimension.h"
 #include "NormalDayCycleDimension.h"
+#include "NetherDimension.h"
 
 //#include "../levelgen/SimpleLevelSource.h"
 #include "../levelgen/RandomLevelSource.h"
@@ -115,6 +116,7 @@ Dimension* Dimension::getNew( int id )
 {
 	if (id == NORMAL) return new Dimension();
 	if (id == NORMAL_DAYCYCLE) return new NormalDayCycleDimension();
+	if (id == NETHER) return new NetherDimension();
 	return NULL;
 }
 
@@ -125,6 +127,10 @@ Dimension* Dimension::getNew( int id )
 Dimension* DimensionFactory::createDefaultDimension(LevelData* data )
 {
 	int dimensionId = Dimension::NORMAL;
+
+	if (data != NULL && data->getDimension() == Dimension::NETHER) {
+		return Dimension::getNew(Dimension::NETHER);
+	}
 
 	switch(data->getGameType()) {
 	case GameType::Survival: dimensionId = Dimension::NORMAL_DAYCYCLE;

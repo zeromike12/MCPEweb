@@ -51,8 +51,8 @@ public:
 	}
 
 private:
-    const long seed;
-    const int gameType;
+    long seed;
+    int gameType;
 };
 
 #endif /*NET_MINECRAFT_WORLD_LEVEL__LevelSettings_H__*/
