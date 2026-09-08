@@ -201,6 +201,8 @@ public:
 	static Item* netherbrick;
 	static Item* netherQuartz;
 
+	static Item* mobEgg;
+
     static Item* record_01;
     static Item* record_02;
 
