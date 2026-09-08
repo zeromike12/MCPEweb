@@ -25,6 +25,8 @@ public:
 
 			r->addShapelessRecipe(ItemInstance(Tile::cloth, 1, ClothTile::getTileDataForItemAuxValue(i)),
 				definition(0, ItemInstance(Item::dye_powder, 1, i), 0, ItemInstance(Item::items[Tile::cloth->id], 1, 0)));
+			r->addShapelessRecipe(ItemInstance(Tile::wood, 1, ClothTile::getTileDataForItemAuxValue(i)),
+				definition(0, ItemInstance(Item::dye_powder, 1, i), 0, ItemInstance(Item::items[Tile::wood->id], 1, 0)));
         }
 		// White cloth/wool-block from any cloth block (including white...)
 		/*

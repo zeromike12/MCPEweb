@@ -57,6 +57,7 @@
 #include "TreeTile.h"
 #include "TntTile.h"
 #include "WebTile.h"
+#include "WoodTile.h"
 #include "WorkbenchTile.h"
 
 #endif /* TILE_INCLUDE_H__ */

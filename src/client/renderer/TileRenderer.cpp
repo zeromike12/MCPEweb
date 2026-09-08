@@ -2033,17 +2033,26 @@ void TileRenderer::renderTile( Tile* tile, int data )
 {
 	Tesselator& t = Tesselator::instance;
 
-	t.color(0xff, 0xff, 0xff);
+	int col = tile->getColor(data);
+	float cr = ((col >> 16) & 0xff) / 255.0f;
+	float cg = ((col >> 8) & 0xff) / 255.0f;
+	float cb = ((col) & 0xff) / 255.0f;
+
+	t.color(cr, cg, cb);
 	int shape = tile->getRenderShape();
 
 	if (shape == Tile::SHAPE_BLOCK) {
 		tile->updateDefaultShape();
 		t.addOffset(-0.5f, -0.5f, -0.5f);
 		t.begin();
+		t.color(cr * 0.5f, cg * 0.5f, cb * 0.5f);
 		renderFaceDown(tile, 0, 0, 0, tile->getTexture(0, data));
+		t.color(cr * 1.0f, cg * 1.0f, cb * 1.0f);
 		renderFaceUp(tile, 0, 0, 0, tile->getTexture(1, data));
+		t.color(cr * 0.8f, cg * 0.8f, cb * 0.8f);
 		renderNorth(tile, 0, 0, 0, tile->getTexture(2, data));
 		renderSouth(tile, 0, 0, 0, tile->getTexture(3, data));
+		t.color(cr * 0.6f, cg * 0.6f, cb * 0.6f);
 		renderWest(tile, 0, 0, 0, tile->getTexture(4, data));
 		renderEast(tile, 0, 0, 0, tile->getTexture(5, data));
 		t.draw();

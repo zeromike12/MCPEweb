@@ -320,6 +320,7 @@ public:
 
     virtual void handleEntityInside(Level* level, int x, int y, int z, Entity* e, Vec3& current) {}
 
+    virtual int getColor(int data) { return 0xffffff; }
     virtual int getColor(LevelSource* level, int x, int y, int z);
 
 	virtual bool isSignalSource();

@@ -56,7 +56,10 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Item::door_wood));
 
 		Sel[4] = addItem(new ItemInstance(Tile::stoneBrick));
-		Sel[5] = addItem(new ItemInstance(Tile::wood));
+		Sel[5] = addItem(new ItemInstance(Tile::wood, 1, 0));
+		for (int i = 1; i < 16; ++i) {
+			addItem(new ItemInstance(Tile::wood, 1, i));
+		}
 		Sel[2] = addItem(new ItemInstance(Tile::redBrick));
 		Sel[1] = addItem(new ItemInstance(Tile::dirt));
 		addItem(new ItemInstance(Tile::sandStone));
@@ -140,7 +143,10 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Tile::stoneBrickSmooth, 1, 1));
 		addItem(new ItemInstance(Tile::stoneBrickSmooth, 1, 2));
 		addItem(new ItemInstance(Tile::mossStone));
-		Sel[5] =  addItem(new ItemInstance(Tile::wood));
+		Sel[5] =  addItem(new ItemInstance(Tile::wood, 1, 0));
+		for (int i = 1; i < 16; ++i) {
+			addItem(new ItemInstance(Tile::wood, 1, i));
+		}
 		Sel[2] = addItem(new ItemInstance(Tile::redBrick));
 
 #ifdef RPI
