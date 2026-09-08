@@ -64,6 +64,12 @@ public:
 		png_infop infoPtr = png_create_info_struct(pngPtr);
 		if (!infoPtr) { png_destroy_read_struct(&pngPtr, NULL, NULL); fclose(fp); return out; }
 
+		if (setjmp(png_jmpbuf(pngPtr))) {
+			png_destroy_read_struct(&pngPtr, &infoPtr, NULL);
+			fclose(fp);
+			return out;
+		}
+
 		png_init_io(pngPtr, fp);
 		png_read_info(pngPtr, infoPtr);
 
@@ -77,7 +83,9 @@ public:
 		if (ct == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(pngPtr);
 		if (ct == PNG_COLOR_TYPE_GRAY && bd < 8) png_set_expand_gray_1_2_4_to_8(pngPtr);
 		if (png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(pngPtr);
-		if (ct == PNG_COLOR_TYPE_RGB || ct == PNG_COLOR_TYPE_GRAY || ct == PNG_COLOR_TYPE_PALETTE)
+		if (ct == PNG_COLOR_TYPE_RGB || ct == PNG_COLOR_TYPE_GRAY)
+			png_set_filler(pngPtr, 0xFF, PNG_FILLER_AFTER);
+		else if (ct == PNG_COLOR_TYPE_PALETTE && !png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS))
 			png_set_filler(pngPtr, 0xFF, PNG_FILLER_AFTER);
 		if (ct == PNG_COLOR_TYPE_GRAY || ct == PNG_COLOR_TYPE_GRAY_ALPHA)
 			png_set_gray_to_rgb(pngPtr);

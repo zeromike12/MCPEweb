@@ -14,7 +14,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: black;
+            background-color: #111;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -23,6 +23,7 @@
             -webkit-user-select: none;
             user-select: none;
             overscroll-behavior: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
         }
 
         canvas.emscripten {
@@ -34,19 +35,77 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
+            background-color: #000;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.4s ease-out;
+        }
+
+        #loading-title {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+            text-shadow: 2px 2px #000;
+        }
+
+        #progress-container {
+            width: 280px;
+            height: 14px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #5b8c32;
+            transition: width 0.2s ease-in-out;
+        }
+
+        #status {
+            color: #bbb;
+            font-size: 14px;
+            text-align: center;
+            max-width: 80%;
         }
     </style>
 </head>
 
 <body>
+    <div id="loading-overlay">
+        <div id="loading-title">MINECRAFT</div>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="status">Loading...</div>
+    </div>
+
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
 
     <script type='text/javascript'>
+        var BUILD_VERSION = Date.now();
         var Module = {
             canvas: (function () { return document.getElementById('canvas'); })(),
             locateFile: function(path, prefix) {
                 if (path.endsWith('.wasm') || path.endsWith('.data')) {
-                    return (prefix || '') + path + '?v=' + Date.now();
+                    return (prefix || '') + path + '?v=' + BUILD_VERSION;
                 }
                 return (prefix || '') + path;
             },
@@ -55,12 +114,43 @@
             },
             printErr: function(text) {
                 console.warn(text);
+            },
+            setStatus: function(text) {
+                var statusEl = document.getElementById('status');
+                var progressEl = document.getElementById('progress-bar');
+                var overlay = document.getElementById('loading-overlay');
+                if (!statusEl || !overlay) return;
+
+                if (!text || text === 'Running...') {
+                    overlay.style.opacity = '0';
+                    setTimeout(function() { overlay.style.display = 'none'; }, 400);
+                    return;
+                }
+
+                statusEl.innerText = text;
+                var match = text.match(/\((\d+)\/(\d+)\)/);
+                if (match && progressEl) {
+                    var pct = Math.round((parseInt(match[1]) / parseInt(match[2])) * 100);
+                    progressEl.style.width = pct + '%';
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                Module.setStatus(left ? 'Preparing assets... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'Running...');
             }
         };
 
-        (function () {
-            var canvas = document.getElementById('canvas');
+        window.onerror = function(event) {
+            var statusEl = document.getElementById('status');
+            if (statusEl) {
+                statusEl.innerText = 'Error: ' + event;
+                statusEl.style.color = '#ff6b6b';
+            }
+            console.error('Global Runtime Error:', event);
+        };
 
+        (function () {
             // Prevent default touch gestures (pinch-zoom, pull-down-refresh) on the document
             document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
             document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
