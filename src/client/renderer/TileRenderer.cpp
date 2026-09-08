@@ -12,6 +12,7 @@
 #include "../../world/level/tile/BedTile.h"
 #include "../../world/level/tile/StemTile.h"
 #include "../../world/level/tile/StairTile.h"
+#include "../../world/level/tile/FireTile.h"
 #include "../../world/Direction.h"
 #include "../../world/Facing.h"
 #include "tileentity/TileEntityRenderer.h"
@@ -154,8 +155,8 @@ bool TileRenderer::tesselateInWorld( Tile* tt, int x, int y, int z )
         return tesselateRowInWorld(tt, x, y, z);
 	} else if (shape == Tile::SHAPE_TORCH) {
 		return tesselateTorchInWorld(tt, x, y, z);
-    //} else if (shape == Tile::SHAPE_FIRE) {
-    //    return tesselateFireInWorld(tt, x, y, z);
+	} else if (shape == Tile::SHAPE_FIRE) {
+		return tesselateFireInWorld(tt, x, y, z);
     //} else if (shape == Tile::SHAPE_RED_DUST) {
     //    return tesselateDustInWorld(tt, x, y, z);
 	} else if (shape == Tile::SHAPE_LADDER) {
@@ -190,6 +191,170 @@ void TileRenderer::tesselateInWorldNoCulling( Tile* tile, int x, int y, int z )
 	noCulling = true;
 	tesselateInWorld(tile, x, y, z);
 	noCulling = false;
+}
+
+bool TileRenderer::tesselateFireInWorld( Tile* tt, int x, int y, int z )
+{
+	Tesselator& t = Tesselator::instance;
+
+	int tex = tt->getTexture(0, level->getData(x, y, z));
+	if (fixedTexture >= 0) tex = fixedTexture;
+
+	// Fire is self-lit
+	t.color(1.0f, 1.0f, 1.0f);
+
+	int xt = (tex & 0xf) << 4;
+	int yt = tex & 0xf0;
+	float u0 = (xt) / 256.0f;
+	float u1 = (xt + 15.99f) / 256.0f;
+	float v0 = (yt) / 256.0f;
+	float v1 = (yt + 15.99f) / 256.0f;
+
+	float h = 1.4f;
+	float xf = (float)x;
+	float yf = (float)y;
+	float zf = (float)z;
+
+	bool solidBelow = level->isSolidBlockingTile(x, y - 1, z);
+	bool burnBelow  = Tile::fire->canBurn(level, x, y - 1, z);
+
+	if (solidBelow || burnBelow) {
+		// Standing fire: two crossed, slightly leaning panes plus an inner pair.
+		float xx0 = xf + 0.5f + 0.2f;
+		float xx1 = xf + 0.5f - 0.2f;
+		float zz0 = zf + 0.5f + 0.2f;
+		float zz1 = zf + 0.5f - 0.2f;
+		float xx2 = xf + 0.5f - 0.3f;
+		float xx3 = xf + 0.5f + 0.3f;
+		float zz2 = zf + 0.5f - 0.3f;
+		float zz3 = zf + 0.5f + 0.3f;
+
+		t.vertexUV(xx2, yf + h, zf + 1, u1, v0);
+		t.vertexUV(xx0, yf + 0, zf + 1, u1, v1);
+		t.vertexUV(xx0, yf + 0, zf + 0, u0, v1);
+		t.vertexUV(xx2, yf + h, zf + 0, u0, v0);
+
+		t.vertexUV(xx3, yf + h, zf + 0, u1, v0);
+		t.vertexUV(xx1, yf + 0, zf + 0, u1, v1);
+		t.vertexUV(xx1, yf + 0, zf + 1, u0, v1);
+		t.vertexUV(xx3, yf + h, zf + 1, u0, v0);
+
+		t.vertexUV(xf + 1, yf + h, zz2, u1, v0);
+		t.vertexUV(xf + 1, yf + 0, zz0, u1, v1);
+		t.vertexUV(xf + 0, yf + 0, zz0, u0, v1);
+		t.vertexUV(xf + 0, yf + h, zz2, u0, v0);
+
+		t.vertexUV(xf + 0, yf + h, zz3, u1, v0);
+		t.vertexUV(xf + 0, yf + 0, zz1, u1, v1);
+		t.vertexUV(xf + 1, yf + 0, zz1, u0, v1);
+		t.vertexUV(xf + 1, yf + h, zz3, u0, v0);
+
+		xx0 = xf + 0.5f - 0.5f;
+		xx1 = xf + 0.5f + 0.5f;
+		zz0 = zf + 0.5f - 0.5f;
+		zz1 = zf + 0.5f + 0.5f;
+		xx2 = xf + 0.5f - 0.4f;
+		xx3 = xf + 0.5f + 0.4f;
+		zz2 = zf + 0.5f - 0.4f;
+		zz3 = zf + 0.5f + 0.4f;
+
+		t.vertexUV(xx2, yf + h, zf + 0, u0, v0);
+		t.vertexUV(xx0, yf + 0, zf + 0, u0, v1);
+		t.vertexUV(xx0, yf + 0, zf + 1, u1, v1);
+		t.vertexUV(xx2, yf + h, zf + 1, u1, v0);
+
+		t.vertexUV(xx3, yf + h, zf + 1, u0, v0);
+		t.vertexUV(xx1, yf + 0, zf + 1, u0, v1);
+		t.vertexUV(xx1, yf + 0, zf + 0, u1, v1);
+		t.vertexUV(xx3, yf + h, zf + 0, u1, v0);
+
+		t.vertexUV(xf + 0, yf + h, zz2, u0, v0);
+		t.vertexUV(xf + 0, yf + 0, zz0, u0, v1);
+		t.vertexUV(xf + 1, yf + 0, zz0, u1, v1);
+		t.vertexUV(xf + 1, yf + h, zz2, u1, v0);
+
+		t.vertexUV(xf + 1, yf + h, zz3, u0, v0);
+		t.vertexUV(xf + 1, yf + 0, zz1, u0, v1);
+		t.vertexUV(xf + 0, yf + 0, zz1, u1, v1);
+		t.vertexUV(xf + 0, yf + h, zz3, u1, v0);
+	} else {
+		// Fire clinging to flammable neighbours
+		float s = 0.2f;
+		float s2 = 0.0625f;
+		if ((x + y + z & 1) == 1) {
+			u0 = (xt + 15.99f) / 256.0f;
+			u1 = (xt) / 256.0f;
+		}
+		if (Tile::fire->canBurn(level, x - 1, y, z)) {
+			t.vertexUV(xf + s, yf + h + s2, zf + 1, u1, v0);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 1, u1, v1);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 0, u0, v1);
+			t.vertexUV(xf + s, yf + h + s2, zf + 0, u0, v0);
+			t.vertexUV(xf + s, yf + h + s2, zf + 0, u0, v0);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 0, u0, v1);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 1, u1, v1);
+			t.vertexUV(xf + s, yf + h + s2, zf + 1, u1, v0);
+		}
+		if (Tile::fire->canBurn(level, x + 1, y, z)) {
+			t.vertexUV(xf + 1 - s, yf + h + s2, zf + 0, u0, v0);
+			t.vertexUV(xf + 1 - 0, yf + 0 + s2, zf + 0, u0, v1);
+			t.vertexUV(xf + 1 - 0, yf + 0 + s2, zf + 1, u1, v1);
+			t.vertexUV(xf + 1 - s, yf + h + s2, zf + 1, u1, v0);
+			t.vertexUV(xf + 1 - s, yf + h + s2, zf + 1, u1, v0);
+			t.vertexUV(xf + 1 - 0, yf + 0 + s2, zf + 1, u1, v1);
+			t.vertexUV(xf + 1 - 0, yf + 0 + s2, zf + 0, u0, v1);
+			t.vertexUV(xf + 1 - s, yf + h + s2, zf + 0, u0, v0);
+		}
+		if (Tile::fire->canBurn(level, x, y, z - 1)) {
+			t.vertexUV(xf + 0, yf + h + s2, zf + s, u1, v0);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 0, u1, v1);
+			t.vertexUV(xf + 1, yf + 0 + s2, zf + 0, u0, v1);
+			t.vertexUV(xf + 1, yf + h + s2, zf + s, u0, v0);
+			t.vertexUV(xf + 1, yf + h + s2, zf + s, u0, v0);
+			t.vertexUV(xf + 1, yf + 0 + s2, zf + 0, u0, v1);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 0, u1, v1);
+			t.vertexUV(xf + 0, yf + h + s2, zf + s, u1, v0);
+		}
+		if (Tile::fire->canBurn(level, x, y, z + 1)) {
+			t.vertexUV(xf + 1, yf + h + s2, zf + 1 - s, u0, v0);
+			t.vertexUV(xf + 1, yf + 0 + s2, zf + 1 - 0, u0, v1);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 1 - 0, u1, v1);
+			t.vertexUV(xf + 0, yf + h + s2, zf + 1 - s, u1, v0);
+			t.vertexUV(xf + 0, yf + h + s2, zf + 1 - s, u1, v0);
+			t.vertexUV(xf + 0, yf + 0 + s2, zf + 1 - 0, u1, v1);
+			t.vertexUV(xf + 1, yf + 0 + s2, zf + 1 - 0, u0, v1);
+			t.vertexUV(xf + 1, yf + h + s2, zf + 1 - s, u0, v0);
+		}
+		if (Tile::fire->canBurn(level, x, y + 1, z)) {
+			float xx0 = xf + 0.5f + 0.5f;
+			float xx1 = xf + 0.5f - 0.5f;
+			float zz0 = zf + 0.5f + 0.5f;
+			float zz1 = zf + 0.5f - 0.5f;
+			float xx2 = xf + 0.5f - 0.5f;
+			float xx3 = xf + 0.5f + 0.5f;
+			float zz2 = zf + 0.5f - 0.5f;
+			float zz3 = zf + 0.5f + 0.5f;
+			float yy = yf - 0.2f;
+			float hh = yf + 1;
+			t.vertexUV(xx2, hh, zf + 1, u1, v0);
+			t.vertexUV(xx0, yy, zf + 1, u1, v1);
+			t.vertexUV(xx0, yy, zf + 0, u0, v1);
+			t.vertexUV(xx2, hh, zf + 0, u0, v0);
+			t.vertexUV(xx3, hh, zf + 0, u1, v0);
+			t.vertexUV(xx1, yy, zf + 0, u1, v1);
+			t.vertexUV(xx1, yy, zf + 1, u0, v1);
+			t.vertexUV(xx3, hh, zf + 1, u0, v0);
+			t.vertexUV(xf + 1, hh, zz2, u1, v0);
+			t.vertexUV(xf + 1, yy, zz0, u1, v1);
+			t.vertexUV(xf + 0, yy, zz0, u0, v1);
+			t.vertexUV(xf + 0, hh, zz2, u0, v0);
+			t.vertexUV(xf + 0, hh, zz3, u1, v0);
+			t.vertexUV(xf + 0, yy, zz1, u1, v1);
+			t.vertexUV(xf + 1, yy, zz1, u0, v1);
+			t.vertexUV(xf + 1, hh, zz3, u0, v0);
+		}
+	}
+	return true;
 }
 
 bool TileRenderer::tesselateTorchInWorld( Tile* tt, int x, int y, int z )

@@ -56,4 +56,30 @@ public:
 	void tick();
 };
 
+class FireTexture: public DynamicTexture
+{
+	typedef DynamicTexture super;
+	float* current;
+	float* next;
+
+public:
+	FireTexture(int offset);
+	~FireTexture();
+
+	void tick();
+};
+
+class PortalTexture: public DynamicTexture
+{
+	typedef DynamicTexture super;
+	int _tick;
+	unsigned char* frames;
+
+public:
+	PortalTexture();
+	~PortalTexture();
+
+	void tick();
+};
+
 #endif /*NET_MINECRAFT_CLIENT_RENDERER_PTEXTURE__DynamicTexture_H__*/

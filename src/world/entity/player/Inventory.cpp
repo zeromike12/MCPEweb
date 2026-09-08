@@ -206,6 +206,7 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Tile::netheriteBlock));
 		addItem(new ItemInstance(Tile::lapisBlock));
 		addItem(new ItemInstance(Tile::obsidian));
+		addItem(new ItemInstance(Item::flintAndSteel));
 		addItem(new ItemInstance(Tile::snow));
 		addItem(new ItemInstance(Tile::glass));
         addItem(new ItemInstance(Tile::lightGem));

@@ -1275,6 +1275,9 @@ void Minecraft::init()
 	textures = new Textures(&options, platform());
 	textures->addDynamicTexture(new WaterTexture());
 	textures->addDynamicTexture(new WaterSideTexture());
+	textures->addDynamicTexture(new FireTexture(0));
+	textures->addDynamicTexture(new FireTexture(1));
+	textures->addDynamicTexture(new PortalTexture());
 	gui.texturesLoaded(textures);
 
 	levelRenderer = new LevelRenderer(this);
