@@ -732,8 +732,9 @@ void Gui::renderOnSelectItemNameText( const int screenWidth, Font* font, int ySl
 			}
 			if(alpha != 0) {
 				font->drawShadow(item->getName(), x, y, 0x00ffffff + (alpha << 24));
-				if (item->hasModifier()) {
-					std::string desc = Rpg::describeModifier(item->getModifier());
+				std::string desc = Rpg::describeGear(minecraft->player, item);
+				if (desc.empty() && item->hasModifier()) desc = Rpg::describeModifier(item->getModifier());
+				if (!desc.empty()) {
 					float dx = float(screenWidth / 2 - font->width(desc) / 2);
 					font->drawShadow(desc, dx, y - 10, 0x00c0c0c0 + (alpha << 24));
 				}

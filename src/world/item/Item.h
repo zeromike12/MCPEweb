@@ -208,6 +208,14 @@ public:
 
 	static Item* camera;
 
+	// --- RPG mode mythic gear ---
+	static Item* helmet_dragonscale; static Item* chestplate_dragonscale; static Item* leggings_dragonscale; static Item* boots_dragonscale;
+	static Item* helmet_shadowweave; static Item* chestplate_shadowweave; static Item* leggings_shadowweave; static Item* boots_shadowweave;
+	static Item* helmet_titanforged; static Item* chestplate_titanforged; static Item* leggings_titanforged; static Item* boots_titanforged;
+	static Item* helmet_lifebloom; static Item* chestplate_lifebloom; static Item* leggings_lifebloom; static Item* boots_lifebloom;
+	static Item* helmet_stormcaller; static Item* chestplate_stormcaller; static Item* leggings_stormcaller; static Item* boots_stormcaller;
+	static Item* greatsword_obsidian; static Item* katana_blazing; static Item* sword_frostbrand; static Item* dagger_vampire; static Item* hammer_thunder; static Item* fang_venom; static Item* axe_executioner; static Item* scythe_soulreaper; static Item* blade_wind; static Item* longbow_ranger;
+
 	static void initItems();
 	static void teardownItems();
 

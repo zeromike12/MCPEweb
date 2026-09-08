@@ -75,3 +75,9 @@ const ArmorItem::ArmorMaterial ArmorItem::DIAMOND(
 	3, 8, 6, 3
 	//10
 );
+
+#include "RpgGearItem.h"
+const ArmorItem::ArmorMaterial RpgArmorItem::MYTHIC(
+	45,
+	3, 8, 6, 3
+);

@@ -2,6 +2,7 @@
 #include "ItemCategory.h"
 #include "../level/tile/Tile.h"
 #include "ItemInstance.h"
+#include "RpgGearItem.h"
 
 const std::string Item::ICON_DESCRIPTION_PREFIX("item.");
 Random Item::random;
@@ -157,6 +158,46 @@ Item* Item::mobEgg = NULL;
 //Item* Item::record_02 = NULL;
 
 Item* Item::camera = NULL;
+Item* Item::helmet_dragonscale = NULL;
+Item* Item::chestplate_dragonscale = NULL;
+Item* Item::leggings_dragonscale = NULL;
+Item* Item::boots_dragonscale = NULL;
+Item* Item::helmet_shadowweave = NULL;
+Item* Item::chestplate_shadowweave = NULL;
+Item* Item::leggings_shadowweave = NULL;
+Item* Item::boots_shadowweave = NULL;
+Item* Item::helmet_titanforged = NULL;
+Item* Item::chestplate_titanforged = NULL;
+Item* Item::leggings_titanforged = NULL;
+Item* Item::boots_titanforged = NULL;
+Item* Item::helmet_lifebloom = NULL;
+Item* Item::chestplate_lifebloom = NULL;
+Item* Item::leggings_lifebloom = NULL;
+Item* Item::boots_lifebloom = NULL;
+Item* Item::helmet_stormcaller = NULL;
+Item* Item::chestplate_stormcaller = NULL;
+Item* Item::leggings_stormcaller = NULL;
+Item* Item::boots_stormcaller = NULL;
+Item* Item::greatsword_obsidian = NULL;
+Item* Item::katana_blazing = NULL;
+Item* Item::sword_frostbrand = NULL;
+Item* Item::dagger_vampire = NULL;
+Item* Item::hammer_thunder = NULL;
+Item* Item::fang_venom = NULL;
+Item* Item::axe_executioner = NULL;
+Item* Item::scythe_soulreaper = NULL;
+Item* Item::blade_wind = NULL;
+Item* Item::longbow_ranger = NULL;
+
+// Icon indices (column + row * 16) for the mythic gear sprites added to items.png
+static const int RPG_ARMOR_ICON[5][4] = {
+	{ 0 + 14 * 16, 1 + 14 * 16, 2 + 14 * 16, 3 + 14 * 16 },
+	{ 4 + 14 * 16, 5 + 14 * 16, 6 + 14 * 16, 7 + 14 * 16 },
+	{ 8 + 14 * 16, 9 + 14 * 16, 10 + 14 * 16, 11 + 14 * 16 },
+	{ 12 + 14 * 16, 13 + 14 * 16, 14 + 14 * 16, 15 + 14 * 16 },
+	{ 0 + 12 * 16, 1 + 12 * 16, 2 + 12 * 16, 3 + 12 * 16 },
+};
+static const int RPG_WEAPON_ICON[10] = { 4 + 12 * 16, 5 + 12 * 16, 6 + 12 * 16, 7 + 12 * 16, 8 + 12 * 16, 9 + 12 * 16, 10 + 12 * 16, 11 + 12 * 16, 0 + 11 * 16, 1 + 11 * 16 };
 
 /*static*/
 void Item::initItems() {
@@ -290,6 +331,39 @@ void Item::initItems() {
 	//Item::record_01 = (new RecordingItem(2000, "13"))->setIcon(0, 15)->setCategory(ItemCategory::Decorations)->setDescriptionId("record");
 	//Item::record_02 = (new RecordingItem(2001, "cat"))->setIcon(1, 15)->setCategory(ItemCategory::Decorations)->setDescriptionId("record");
 	Item::camera = (new CameraItem(200))->setIcon(2, 15)->setCategory(ItemCategory::Decorations)->setDescriptionId("camera");
+
+
+	// --- RPG mode mythic gear (ids 210-239). Icons live in rows 11-14 of items.png. ---
+	Item::helmet_dragonscale = (new RpgArmorItem(210, RpgGear::SET_DRAGONSCALE, ArmorItem::SLOT_HEAD))->setIcon(RPG_ARMOR_ICON[0][0])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("helmetDragonscale");
+	Item::chestplate_dragonscale = (new RpgArmorItem(211, RpgGear::SET_DRAGONSCALE, ArmorItem::SLOT_TORSO))->setIcon(RPG_ARMOR_ICON[0][1])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("chestplateDragonscale");
+	Item::leggings_dragonscale = (new RpgArmorItem(212, RpgGear::SET_DRAGONSCALE, ArmorItem::SLOT_LEGS))->setIcon(RPG_ARMOR_ICON[0][2])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("leggingsDragonscale");
+	Item::boots_dragonscale = (new RpgArmorItem(213, RpgGear::SET_DRAGONSCALE, ArmorItem::SLOT_FEET))->setIcon(RPG_ARMOR_ICON[0][3])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("bootsDragonscale");
+	Item::helmet_shadowweave = (new RpgArmorItem(214, RpgGear::SET_SHADOWWEAVE, ArmorItem::SLOT_HEAD))->setIcon(RPG_ARMOR_ICON[1][0])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("helmetShadowweave");
+	Item::chestplate_shadowweave = (new RpgArmorItem(215, RpgGear::SET_SHADOWWEAVE, ArmorItem::SLOT_TORSO))->setIcon(RPG_ARMOR_ICON[1][1])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("chestplateShadowweave");
+	Item::leggings_shadowweave = (new RpgArmorItem(216, RpgGear::SET_SHADOWWEAVE, ArmorItem::SLOT_LEGS))->setIcon(RPG_ARMOR_ICON[1][2])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("leggingsShadowweave");
+	Item::boots_shadowweave = (new RpgArmorItem(217, RpgGear::SET_SHADOWWEAVE, ArmorItem::SLOT_FEET))->setIcon(RPG_ARMOR_ICON[1][3])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("bootsShadowweave");
+	Item::helmet_titanforged = (new RpgArmorItem(218, RpgGear::SET_TITANFORGED, ArmorItem::SLOT_HEAD))->setIcon(RPG_ARMOR_ICON[2][0])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("helmetTitanforged");
+	Item::chestplate_titanforged = (new RpgArmorItem(219, RpgGear::SET_TITANFORGED, ArmorItem::SLOT_TORSO))->setIcon(RPG_ARMOR_ICON[2][1])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("chestplateTitanforged");
+	Item::leggings_titanforged = (new RpgArmorItem(220, RpgGear::SET_TITANFORGED, ArmorItem::SLOT_LEGS))->setIcon(RPG_ARMOR_ICON[2][2])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("leggingsTitanforged");
+	Item::boots_titanforged = (new RpgArmorItem(221, RpgGear::SET_TITANFORGED, ArmorItem::SLOT_FEET))->setIcon(RPG_ARMOR_ICON[2][3])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("bootsTitanforged");
+	Item::helmet_lifebloom = (new RpgArmorItem(222, RpgGear::SET_LIFEBLOOM, ArmorItem::SLOT_HEAD))->setIcon(RPG_ARMOR_ICON[3][0])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("helmetLifebloom");
+	Item::chestplate_lifebloom = (new RpgArmorItem(223, RpgGear::SET_LIFEBLOOM, ArmorItem::SLOT_TORSO))->setIcon(RPG_ARMOR_ICON[3][1])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("chestplateLifebloom");
+	Item::leggings_lifebloom = (new RpgArmorItem(224, RpgGear::SET_LIFEBLOOM, ArmorItem::SLOT_LEGS))->setIcon(RPG_ARMOR_ICON[3][2])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("leggingsLifebloom");
+	Item::boots_lifebloom = (new RpgArmorItem(225, RpgGear::SET_LIFEBLOOM, ArmorItem::SLOT_FEET))->setIcon(RPG_ARMOR_ICON[3][3])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("bootsLifebloom");
+	Item::helmet_stormcaller = (new RpgArmorItem(226, RpgGear::SET_STORMCALLER, ArmorItem::SLOT_HEAD))->setIcon(RPG_ARMOR_ICON[4][0])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("helmetStormcaller");
+	Item::chestplate_stormcaller = (new RpgArmorItem(227, RpgGear::SET_STORMCALLER, ArmorItem::SLOT_TORSO))->setIcon(RPG_ARMOR_ICON[4][1])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("chestplateStormcaller");
+	Item::leggings_stormcaller = (new RpgArmorItem(228, RpgGear::SET_STORMCALLER, ArmorItem::SLOT_LEGS))->setIcon(RPG_ARMOR_ICON[4][2])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("leggingsStormcaller");
+	Item::boots_stormcaller = (new RpgArmorItem(229, RpgGear::SET_STORMCALLER, ArmorItem::SLOT_FEET))->setIcon(RPG_ARMOR_ICON[4][3])->setCategory(ItemCategory::FoodArmor)->setDescriptionId("bootsStormcaller");
+	Item::greatsword_obsidian = (new RpgWeaponItem(230, 11, 2000, RpgGear::FX_CLEAVE))->setIcon(RPG_WEAPON_ICON[0])->setCategory(ItemCategory::Tools)->setDescriptionId("greatswordObsidian");
+	Item::katana_blazing = (new RpgWeaponItem(231, 8, 1800, RpgGear::FX_BLAZE))->setIcon(RPG_WEAPON_ICON[1])->setCategory(ItemCategory::Tools)->setDescriptionId("katanaBlazing");
+	Item::sword_frostbrand = (new RpgWeaponItem(232, 8, 1800, RpgGear::FX_FROST))->setIcon(RPG_WEAPON_ICON[2])->setCategory(ItemCategory::Tools)->setDescriptionId("swordFrostbrand");
+	Item::dagger_vampire = (new RpgWeaponItem(233, 6, 1600, RpgGear::FX_LEECH))->setIcon(RPG_WEAPON_ICON[3])->setCategory(ItemCategory::Tools)->setDescriptionId("daggerVampire");
+	Item::hammer_thunder = (new RpgWeaponItem(234, 10, 2000, RpgGear::FX_THUNDER))->setIcon(RPG_WEAPON_ICON[4])->setCategory(ItemCategory::Tools)->setDescriptionId("hammerThunder");
+	Item::fang_venom = (new RpgWeaponItem(235, 7, 1600, RpgGear::FX_VENOM))->setIcon(RPG_WEAPON_ICON[5])->setCategory(ItemCategory::Tools)->setDescriptionId("fangVenom");
+	Item::axe_executioner = (new RpgWeaponItem(236, 9, 1800, RpgGear::FX_EXECUTE))->setIcon(RPG_WEAPON_ICON[6])->setCategory(ItemCategory::Tools)->setDescriptionId("axeExecutioner");
+	Item::scythe_soulreaper = (new RpgWeaponItem(237, 9, 1800, RpgGear::FX_SOUL))->setIcon(RPG_WEAPON_ICON[7])->setCategory(ItemCategory::Tools)->setDescriptionId("scytheSoulreaper");
+	Item::blade_wind = (new RpgWeaponItem(238, 7, 4000, RpgGear::FX_WIND))->setIcon(RPG_WEAPON_ICON[8])->setCategory(ItemCategory::Tools)->setDescriptionId("bladeWind");
+	Item::longbow_ranger = (new RpgLongbowItem(239))->setIcon(RPG_WEAPON_ICON[9])->setCategory(ItemCategory::Tools)->setDescriptionId("longbowRanger");
 
 	for (int i = 256; i < MAX_ITEMS; ++i) {
 		if (items[i] && items[i]->category == -1)

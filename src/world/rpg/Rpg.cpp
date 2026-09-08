@@ -18,6 +18,8 @@
 #include "../item/WeaponItem.h"
 #include "../item/ArmorItem.h"
 #include "../item/BowItem.h"
+#include "../item/RpgGearItem.h"
+#include "../phys/AABB.h"
 #include "../../util/Random.h"
 #include "../../util/Mth.h"
 #include "../../locale/I18n.h"
@@ -174,7 +176,7 @@ static bool isWeapon(const ItemInstance& item) {
 }
 
 static bool isArmor(const ItemInstance& item) {
-	return ItemInstance::isArmorItem(&item);
+	return ItemInstance::isArmorItem(&item) && dynamic_cast<RpgArmorItem*>(item.getItem()) == NULL;
 }
 
 static int rollWeaponKind(Random* random, int rarity) {
@@ -370,22 +372,287 @@ int weaponLifeSteal(int modifier, int damageDealt) {
 	return heal < 1 ? 1 : heal;
 }
 
-void applyWeaponOnHit(Player* attacker, Entity* target, ItemInstance* weapon, int damageDealt) {
-	if (!attacker || !target || !weapon || !weapon->hasModifier()) return;
-	int mod = weapon->getModifier();
 
-	int fire = weaponFireSeconds(mod);
-	if (fire > 0 && !target->isFireImmune()) {
-		int ticks = fire * 20;
-		if (target->onFire < ticks) target->onFire = ticks;
+// ----------------------------------------------------------------------
+// Mythic gear: armor sets & unique weapons
+// ----------------------------------------------------------------------
+static RpgArmorItem* asMythicArmor(const ItemInstance* inst) {
+	if (!inst || inst->isNull()) return NULL;
+	return dynamic_cast<RpgArmorItem*>(inst->getItem());
+}
+
+static RpgWeaponItem* asMythicWeapon(const ItemInstance* inst) {
+	if (!inst || inst->isNull()) return NULL;
+	return dynamic_cast<RpgWeaponItem*>(inst->getItem());
+}
+
+int armorSetPieces(Player* player, int set) {
+	if (!player || set < 0) return 0;
+	int n = 0;
+	for (int i = 0; i < 4; ++i) {
+		RpgArmorItem* a = asMythicArmor(player->getArmor(i));
+		if (a && a->set == set) n++;
+	}
+	return n;
+}
+
+int fullArmorSet(Player* player) {
+	for (int s = 0; s < RpgGear::SET_COUNT; ++s)
+		if (armorSetPieces(player, s) >= 4) return s;
+	return -1;
+}
+
+std::string armorSetName(int set) {
+	switch (set) {
+	case RpgGear::SET_DRAGONSCALE: return "Dragonscale";
+	case RpgGear::SET_SHADOWWEAVE: return "Shadowweave";
+	case RpgGear::SET_TITANFORGED: return "Titanforged";
+	case RpgGear::SET_LIFEBLOOM:   return "Lifebloom";
+	case RpgGear::SET_STORMCALLER: return "Stormcaller";
+	}
+	return "";
+}
+
+std::string armorSetBonusDescription(int set, int pieces) {
+	std::string two, four;
+	switch (set) {
+	case RpgGear::SET_DRAGONSCALE: two = "attackers burn";          four = "immune to fire and lava"; break;
+	case RpgGear::SET_SHADOWWEAVE: two = "+15% speed";              four = "+35% speed, no fall damage"; break;
+	case RpgGear::SET_TITANFORGED: two = "+1 armor per piece";      four = "-25% damage, no knockback"; break;
+	case RpgGear::SET_LIFEBLOOM:   two = "+2 health per piece";     four = "regenerate health"; break;
+	case RpgGear::SET_STORMCALLER: two = "+20% damage";             four = "lightning strikes on hit"; break;
+	default: return "";
+	}
+	std::stringstream ss;
+	ss << "\xa7" << (pieces >= 2 ? "a" : "8") << "(2) " << two << "  ";
+	ss << "\xa7" << (pieces >= 4 ? "a" : "8") << "(4) " << four;
+	return ss.str();
+}
+
+std::string weaponEffectDescription(const Item* item) {
+	const RpgWeaponItem* w = dynamic_cast<const RpgWeaponItem*>(item);
+	if (!w) {
+		if (dynamic_cast<const RpgLongbowItem*>(item)) return "Arrows fly faster, hit harder and always crit";
+		return "";
+	}
+	switch (w->effect) {
+	case RpgGear::FX_CLEAVE:  return "Massive blows send enemies flying";
+	case RpgGear::FX_BLAZE:   return "Sets enemies ablaze";
+	case RpgGear::FX_FROST:   return "Freezes enemies in place";
+	case RpgGear::FX_LEECH:   return "Heals you for half the damage dealt";
+	case RpgGear::FX_THUNDER: return "Shockwave damages all nearby enemies";
+	case RpgGear::FX_VENOM:   return "Poisons enemies";
+	case RpgGear::FX_EXECUTE: return "Double damage to wounded enemies";
+	case RpgGear::FX_SOUL:    return "Kills grant +50% XP";
+	case RpgGear::FX_WIND:    return "+25% speed while held, never breaks";
+	default: return "";
+	}
+}
+
+std::string describeGear(Player* player, const ItemInstance* item) {
+	if (!item || item->isNull()) return "";
+	if (RpgArmorItem* a = asMythicArmor(item)) {
+		int pieces = armorSetPieces(player, a->set);
+		std::stringstream ss;
+		ss << "\xa7" "d" << armorSetName(a->set) << " set (" << pieces << "/4)  " << armorSetBonusDescription(a->set, pieces);
+		return ss.str();
+	}
+	std::string fx = weaponEffectDescription(item->getItem());
+	if (!fx.empty()) {
+		std::string base = "\xa7" "d" "Mythic: " + fx;
+		if (item->hasModifier()) base += "  \xa7" "7" + describeModifier(item->getModifier());
+		return base;
+	}
+	return "";
+}
+
+bool setFireImmune(Player* player) {
+	return armorSetPieces(player, RpgGear::SET_DRAGONSCALE) >= 4;
+}
+
+float setSpeedMultiplier(Player* player) {
+	float m = 1.0f;
+	int shadow = armorSetPieces(player, RpgGear::SET_SHADOWWEAVE);
+	if (shadow >= 4) m *= 1.35f;
+	else if (shadow >= 2) m *= 1.15f;
+	RpgWeaponItem* w = asMythicWeapon(player->getCarriedItem());
+	if (w && w->effect == RpgGear::FX_WIND) m *= 1.25f;
+	return m;
+}
+
+bool setNoFallDamage(Player* player) {
+	return armorSetPieces(player, RpgGear::SET_SHADOWWEAVE) >= 4;
+}
+
+bool setKnockbackImmune(Player* player) {
+	return armorSetPieces(player, RpgGear::SET_TITANFORGED) >= 4;
+}
+
+int setBonusDefense(Player* player) {
+	int titan = armorSetPieces(player, RpgGear::SET_TITANFORGED);
+	return titan >= 2 ? titan : 0;
+}
+
+int setBonusHealth(Player* player) {
+	int life = armorSetPieces(player, RpgGear::SET_LIFEBLOOM);
+	return life >= 2 ? life * 2 : 0;
+}
+
+float setDamageReduction(Player* player) {
+	return armorSetPieces(player, RpgGear::SET_TITANFORGED) >= 4 ? 0.25f : 0.0f;
+}
+
+int setBonusDamage(Player* player, int baseDamage) {
+	if (armorSetPieces(player, RpgGear::SET_STORMCALLER) >= 2)
+		return (int) std::ceil(baseDamage * 0.2f);
+	return 0;
+}
+
+int setThorns(Player* player) {
+	return 0;
+}
+
+void tickArmorSets(Player* player) {
+	if (!player || !player->level || player->level->isClientSide) return;
+	if (player->health <= 0) return;
+	// Lifebloom 4/4: regenerate 1 health every 2.5 seconds
+	if (armorSetPieces(player, RpgGear::SET_LIFEBLOOM) >= 4 && player->tickCount % 50 == 0) {
+		if (player->health < player->getMaxHealth()) player->heal(1);
+	}
+	// Dragonscale 4/4: never burn
+	if (setFireImmune(player) && player->onFire > 0) player->onFire = 0;
+}
+
+void onPlayerHurt(Player* player, Entity* attacker) {
+	if (!player || !attacker || player->level->isClientSide) return;
+	if (!attacker->isMob() || attacker->isPlayer()) return;
+	// Dragonscale 2/4: melee attackers catch fire
+	if (armorSetPieces(player, RpgGear::SET_DRAGONSCALE) >= 2 && attacker->distanceToSqr(player) < 9.0f) {
+		if (!attacker->isFireImmune() && attacker->onFire < 80) attacker->onFire = 80;
+	}
+}
+
+static void strikeNearby(Player* attacker, Entity* center, int damage, float radius, bool freeze) {
+	Level* level = attacker->level;
+	AABB box = center->bb.grow(radius, 1.5f, radius);
+	EntityList list = level->getEntities(center, box);
+	for (unsigned int i = 0; i < list.size(); ++i) {
+		Entity* e = list[i];
+		if (!e || e == attacker || !e->isMob() || e->isPlayer()) continue;
+		if (e->getCreatureBaseType() != MobTypes::BaseEnemy) continue;
+		Mob* m = (Mob*) e;
+		int before = m->invulnerableTime;
+		m->invulnerableTime = 0;
+		m->hurt(attacker, damage);
+		if (m->invulnerableTime < before) m->invulnerableTime = before;
+		if (freeze) m->frozenTicks = 40;
+	}
+}
+
+int applyWeaponPreHit(Player* attacker, Entity* target, ItemInstance* weapon, int damage) {
+	if (!attacker || !target) return damage;
+	// Stormcaller set: +20% damage
+	damage += setBonusDamage(attacker, damage);
+	RpgWeaponItem* w = asMythicWeapon(weapon);
+	if (!w || !target->isMob()) return damage;
+	Mob* mob = (Mob*) target;
+	switch (w->effect) {
+	case RpgGear::FX_EXECUTE:
+		if (mob->health * 2 <= mob->getScaledMaxHealth()) damage *= 2;
+		break;
+	default: break;
+	}
+	return damage;
+}
+
+void applyWeaponOnHit(Player* attacker, Entity* target, ItemInstance* weapon, int damageDealt) {
+	if (!attacker || !target || !weapon) return;
+	Level* level = attacker->level;
+
+	// Ordinary modifier effects
+	if (weapon->hasModifier()) {
+		int mod = weapon->getModifier();
+		int fire = weaponFireSeconds(mod);
+		if (fire > 0 && !target->isFireImmune()) {
+			int ticks = fire * 20;
+			if (target->onFire < ticks) target->onFire = ticks;
+		}
+		int heal = weaponLifeSteal(mod, damageDealt);
+		if (heal > 0) attacker->heal(heal);
 	}
 
-	int heal = weaponLifeSteal(mod, damageDealt);
-	if (heal > 0) attacker->heal(heal);
+	// Stormcaller 4/4: lightning strikes nearby enemies (1 in 3 hits)
+	if (armorSetPieces(attacker, RpgGear::SET_STORMCALLER) >= 4 && level->random.nextInt(3) == 0) {
+		strikeNearby(attacker, target, 3 + damageDealt / 3, 3.0f, false);
+		if (!target->isFireImmune() && target->onFire < 40) target->onFire = 40;
+	}
+
+	// Mythic weapon effects
+	RpgWeaponItem* w = asMythicWeapon(weapon);
+	if (!w || !target->isMob()) return;
+	Mob* mob = (Mob*) target;
+	switch (w->effect) {
+	case RpgGear::FX_CLEAVE: {
+		// extra knockback
+		float dx = target->x - attacker->x, dz = target->z - attacker->z;
+		float d = std::sqrt(dx * dx + dz * dz);
+		if (d < 0.01f) d = 0.01f;
+		target->xd += dx / d * 1.2f;
+		target->zd += dz / d * 1.2f;
+		target->yd += 0.3f;
+		break;
+	}
+	case RpgGear::FX_BLAZE:
+		if (!target->isFireImmune() && target->onFire < 120) target->onFire = 120;
+		break;
+	case RpgGear::FX_FROST:
+		mob->frozenTicks = 60;
+		break;
+	case RpgGear::FX_LEECH:
+		attacker->heal((damageDealt + 1) / 2);
+		break;
+	case RpgGear::FX_THUNDER:
+		strikeNearby(attacker, target, (damageDealt + 1) / 2, 3.5f, false);
+		break;
+	case RpgGear::FX_VENOM:
+		mob->poisonTicks = 150;
+		break;
+	default: break;
+	}
+}
+
+float weaponXpMultiplier(Player* player) {
+	if (!player) return 1.0f;
+	RpgWeaponItem* w = asMythicWeapon(player->getCarriedItem());
+	if (w && w->effect == RpgGear::FX_SOUL) return 1.5f;
+	return 1.0f;
+}
+
+bool gearNoDurabilityLoss(const ItemInstance* item) {
+	RpgWeaponItem* w = asMythicWeapon(item);
+	if (w && w->effect == RpgGear::FX_WIND) return true;
+	if (item && item->hasModifier() && weaponNoDurabilityLoss(item->getModifier())) return true;
+	return false;
+}
+
+Item* rollMythicItem(Random* random) {
+	Item* const armor[5][4] = {
+		{ Item::helmet_dragonscale, Item::chestplate_dragonscale, Item::leggings_dragonscale, Item::boots_dragonscale },
+		{ Item::helmet_shadowweave, Item::chestplate_shadowweave, Item::leggings_shadowweave, Item::boots_shadowweave },
+		{ Item::helmet_titanforged, Item::chestplate_titanforged, Item::leggings_titanforged, Item::boots_titanforged },
+		{ Item::helmet_lifebloom,   Item::chestplate_lifebloom,   Item::leggings_lifebloom,   Item::boots_lifebloom },
+		{ Item::helmet_stormcaller, Item::chestplate_stormcaller, Item::leggings_stormcaller, Item::boots_stormcaller },
+	};
+	Item* const weapons[10] = {
+		Item::greatsword_obsidian, Item::katana_blazing, Item::sword_frostbrand, Item::dagger_vampire, Item::hammer_thunder,
+		Item::fang_venom, Item::axe_executioner, Item::scythe_soulreaper, Item::blade_wind, Item::longbow_ranger,
+	};
+	if (random->nextInt(2) == 0) return weapons[random->nextInt(10)];
+	return armor[random->nextInt(5)][random->nextInt(4)];
 }
 
 int playerArmorBonusDefense(Player* player) {
-	int total = 0;
+	int total = setBonusDefense(player);
 	for (int i = 0; i < 4; ++i) {
 		const ItemInstance* a = player->getArmor(i);
 		if (a && !a->isNull()) total += armorBonusDefense(a->getModifier());
@@ -394,7 +661,7 @@ int playerArmorBonusDefense(Player* player) {
 }
 
 int playerArmorBonusHealth(Player* player) {
-	int total = 0;
+	int total = setBonusHealth(player);
 	for (int i = 0; i < 4; ++i) {
 		const ItemInstance* a = player->getArmor(i);
 		if (a && !a->isNull()) total += armorBonusHealth(a->getModifier());
@@ -403,7 +670,7 @@ int playerArmorBonusHealth(Player* player) {
 }
 
 float playerArmorDamageReduction(Player* player) {
-	float total = 0;
+	float total = setDamageReduction(player);
 	for (int i = 0; i < 4; ++i) {
 		const ItemInstance* a = player->getArmor(i);
 		if (a && !a->isNull()) total += armorDamageReduction(a->getModifier());
@@ -489,6 +756,24 @@ void fillLootChest(Level* level, int x, int y, int z, Random* random, int qualit
 			slot = (slot + 1) % size;
 		}
 		chest->setItem(slot, &inst);
+	}
+
+	// Mythic gear is exceptionally rare: ~1 in 6 boss chests, ~1 in 40 dungeon chests, ~1 in 200 world chests
+	if (rpg) {
+		int chance = quality == 2 ? 6 : (quality == 1 ? 40 : 200);
+		if (random->nextInt(chance) == 0) {
+			Item* mythic = rollMythicItem(random);
+			if (mythic) {
+				ItemInstance inst(mythic, 1, 0);
+				int slot = random->nextInt(size);
+				for (int tries = 0; tries < size; ++tries) {
+					ItemInstance* existing = chest->getItem(slot);
+					if (!existing || existing->isNull()) break;
+					slot = (slot + 1) % size;
+				}
+				chest->setItem(slot, &inst);
+			}
+		}
 	}
 
 	// Some consumables

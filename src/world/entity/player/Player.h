@@ -153,6 +153,8 @@ public:
     int getArmorValue();
 protected:
 	bool isImmobile();
+	void knockback(Entity* source, int dmg, float xd, float zd);
+	void causeFallDamage(float distance);
 	void updateAi();
 	virtual void closeContainer();
 	void setDefaultHeadHeight();

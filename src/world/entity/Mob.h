@@ -190,6 +190,9 @@ public:
 	bool rpgLevelAssigned;
 	/// Persistent mobs (dungeon guards) never despawn. Saved as "Persistent".
 	bool persistent;
+	/// RPG weapon status effects (ticks remaining)
+	int frozenTicks;
+	int poisonTicks;
 
 	int hurtTime;
 	int hurtDuration;

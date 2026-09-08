@@ -16,6 +16,7 @@ class Player;
 class Entity;
 class ItemInstance;
 class Random;
+class Item;
 
 namespace Rpg {
 
@@ -131,6 +132,47 @@ namespace Rpg {
 	// ------------------------------------------------------------------
 	// Tries to place a loot chest somewhere in the chunk starting at (xo, zo).
 	void  placeLootChest(Level* level, int xo, int zo, Random* random);
+
+	// ------------------------------------------------------------------
+	// Mythic gear: armor sets with set bonuses and unique weapons.
+	// ------------------------------------------------------------------
+	// Number of pieces of `set` the player is wearing (0-4).
+	int   armorSetPieces(Player* player, int set);
+	// The set the player has the full 4-piece bonus for, or -1.
+	int   fullArmorSet(Player* player);
+	// Human-readable name / description of a set.
+	std::string armorSetName(int set);
+	std::string armorSetBonusDescription(int set, int pieces);
+	// Description for a mythic weapon's special effect.
+	std::string weaponEffectDescription(const Item* item);
+	// Extra description line shown under the item name (set / effect info).
+	std::string describeGear(Player* player, const ItemInstance* item);
+
+	// Set-bonus queries (all return "no bonus" values when not wearing enough)
+	bool  setFireImmune(Player* player);          // Dragonscale 4/4
+	float setSpeedMultiplier(Player* player);     // Shadowweave 2/4, 4/4; Blade of the Wind
+	bool  setNoFallDamage(Player* player);        // Shadowweave 4/4
+	bool  setKnockbackImmune(Player* player);     // Titanforged 4/4
+	int   setBonusDefense(Player* player);        // Titanforged 2/4 (+per piece)
+	int   setBonusHealth(Player* player);         // Lifebloom 2/4 (+per piece)
+	float setDamageReduction(Player* player);     // Titanforged 4/4
+	int   setBonusDamage(Player* player, int baseDamage); // Stormcaller 2/4
+	int   setThorns(Player* player);              // Dragonscale 2/4
+	// Called every server tick for the player (regen, etc.)
+	void  tickArmorSets(Player* player);
+	// Called when the player is hit by `attacker` (after damage): burn attackers etc.
+	void  onPlayerHurt(Player* player, Entity* attacker);
+
+	// Weapon effect hooks
+	// Adjusts the outgoing damage of a mythic weapon before it is applied.
+	int   applyWeaponPreHit(Player* attacker, Entity* target, ItemInstance* weapon, int damage);
+	// XP multiplier from the held weapon (Soulreaper)
+	float weaponXpMultiplier(Player* player);
+	// Whether the held mythic weapon never loses durability
+	bool  gearNoDurabilityLoss(const ItemInstance* item);
+
+	// Picks a random mythic item (armor piece or weapon). Used by boss chests.
+	Item* rollMythicItem(Random* random);
 
 	// Fills the chest at (x, y, z) with loot. quality: 0 = world chest,
 	// 1 = dungeon chest, 2 = dungeon boss chest (more gear, better tiers,

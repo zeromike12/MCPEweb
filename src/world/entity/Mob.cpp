@@ -69,7 +69,9 @@ Mob::Mob(Level* level)
 	dmgSpill(0),
 	bypassArmor(false),
 	rpgLevelAssigned(false),
-	persistent(false)
+	persistent(false),
+	frozenTicks(0),
+	poisonTicks(0)
 {
 	entityData.define(SharedFlagsInformation::DATA_SHARED_FLAGS_ID, (SynchedEntityData::TypeChar) 0);
 	entityData.define(DATA_AIR_SUPPLY_ID, (SynchedEntityData::TypeShort) TOTAL_AIR_SUPPLY);
@@ -159,6 +161,25 @@ void Mob::baseTick()
 
 	if (isAlive() && isInWall()) {
 		hurt(NULL, 1);
+	}
+
+	// RPG weapon status effects
+	if (!level->isClientSide) {
+		if (frozenTicks > 0) {
+			frozenTicks--;
+			xd = 0; zd = 0;
+			if ((frozenTicks & 3) == 0)
+				level->addParticle(PARTICLETYPE(bubble), x + (random.nextFloat() - 0.5f) * bbWidth, bb.y0 + random.nextFloat() * bbHeight, z + (random.nextFloat() - 0.5f) * bbWidth, 0, 0, 0);
+		}
+		if (poisonTicks > 0) {
+			poisonTicks--;
+			if (poisonTicks % 25 == 0 && health > 1) {
+				int before = invulnerableTime;
+				invulnerableTime = 0;
+				hurt(NULL, 1);
+				if (invulnerableTime > before) invulnerableTime = before;
+			}
+		}
 	}
 
 	//if (fireImmune || level.isOnline) onFire = 0;
@@ -505,6 +526,12 @@ void Mob::die( Entity* source )
 	if (!level->isClientSide) {
 		if (!isBaby()) {
 			dropDeathLoot();
+		}
+		// RPG mode: elite dungeon guards (persistent, level 15+) very rarely drop mythic gear
+		if (Rpg::isEnabled(level) && persistent && !isPlayer() && getRpgLevel() >= 15 && source != NULL
+			&& getCreatureBaseType() == MobTypes::BaseEnemy && random.nextInt(25) == 0) {
+			Item* mythic = Rpg::rollMythicItem(&random);
+			if (mythic) spawnAtLocation(new ItemInstance(mythic, 1, 0), 0.0f);
 		}
 		level->broadcastEntityEvent(this, EntityEvent::DEATH);
 	}
@@ -888,7 +915,7 @@ void Mob::newServerAiStep() {
 
 bool Mob::isImmobile()
 {
-	return health <= 0;
+	return health <= 0 || frozenTicks > 0;
 }
 
 void Mob::jumpFromGround()

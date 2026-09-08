@@ -1,4 +1,5 @@
 #include "LocalPlayer.h"
+#include "../../world/rpg/Rpg.h"
 #include "../Minecraft.h"
 #include "../../ErrorCodes.h"
 #include "../../world/entity/EntityEvent.h"
@@ -513,6 +514,7 @@ void LocalPlayer::drop( ItemInstance* item, bool randomly )
 
 void LocalPlayer::causeFallDamage( float distance )
 {
+	if (Rpg::isEnabled(level) && Rpg::setNoFallDamage(this)) return;
 	int dmg = (int) ceil((distance - 3));
 	if (dmg > 0) {
 		if (level->isClientSide) {

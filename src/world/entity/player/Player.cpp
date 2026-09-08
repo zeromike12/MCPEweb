@@ -260,6 +260,10 @@ void Player::tick() {
 
 	if (!level->isClientSide) {
 		foodData.tick(this);
+		if (Rpg::isEnabled(level)) {
+			Rpg::tickArmorSets(this);
+			fireImmune = Rpg::setFireImmune(this); // Dragonscale set bonus
+		}
 	//	if (containerMenu != NULL && !containerMenu->stillValid(this)) {
 	//		closeContainer();
 	//	}
@@ -610,7 +614,19 @@ void Player::_init() {
 }
 
 float Player::getWalkingSpeedModifier() {
-	return super::getWalkingSpeedModifier();
+	float m = super::getWalkingSpeedModifier();
+	if (Rpg::isEnabled(level)) m *= Rpg::setSpeedMultiplier(this);
+	return m;
+}
+
+void Player::knockback(Entity* source, int dmg, float xd, float zd) {
+	if (Rpg::isEnabled(level) && Rpg::setKnockbackImmune(this)) return;
+	super::knockback(source, dmg, xd, zd);
+}
+
+void Player::causeFallDamage(float distance) {
+	if (Rpg::isEnabled(level) && Rpg::setNoFallDamage(this)) return;
+	super::causeFallDamage(distance);
 }
 
 
@@ -620,6 +636,7 @@ void Player::awardKillScore(Entity* victim, int score) {
 		Mob* mob = (Mob*) victim;
 		bool hostile = mob->getCreatureBaseType() == MobTypes::BaseEnemy;
 		int xp = Rpg::xpForKill(mob->getRpgLevel(), hostile);
+		xp = (int) std::floor(xp * Rpg::weaponXpMultiplier(this) + 0.5f);
 		int before = rpgPlayerLevel;
 		addRpgXp(xp);
 		if (rpgPlayerLevel == before) {
@@ -836,6 +853,7 @@ bool Player::hurt(Entity* source, int dmg) {
 				Mob* attacker = (Mob*) source;
 				if (attacker->distanceToSqr(this) < 9.0f) attacker->hurt(this, thorns);
 			}
+			Rpg::onPlayerHurt(this, source);
 		}
 	}
 
@@ -881,6 +899,7 @@ void Player::attack(Entity* entity) {
 		bool hostile = entity->getCreatureBaseType() == MobTypes::BaseEnemy;
 		if (weapon != NULL && weapon->hasModifier())
 			dmg += Rpg::weaponBonusDamage(weapon->getModifier(), dmg, hostile);
+		dmg = Rpg::applyWeaponPreHit(this, entity, weapon, dmg);
 		dmg = (int) std::floor(dmg * Rpg::playerDamageMultiplier(rpgPlayerLevel) + 0.5f);
 		if (dmg < 1) dmg = 1;
 	}
@@ -888,8 +907,8 @@ void Player::attack(Entity* entity) {
         entity->hurt(this, dmg);
         if (rpg) Rpg::applyWeaponOnHit(this, entity, weapon, dmg);
         ItemInstance* item = inventory->getSelected();
-        if (rpg && item != NULL && item->hasModifier() && Rpg::weaponNoDurabilityLoss(item->getModifier())) {
-            // Swift weapons never wear down
+        if (rpg && item != NULL && Rpg::gearNoDurabilityLoss(item)) {
+            // Swift weapons / Blade of the Wind never wear down
         } else if (item != NULL && entity->isMob() && abilities.instabuild != true) {
             item->hurtEnemy((Mob*) entity);
             if (item->count <= 0) {
