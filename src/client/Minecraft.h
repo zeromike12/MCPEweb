@@ -34,7 +34,7 @@ class Font;
 class LevelStorageSource;
 class BuildActionIntention;
 class PerfRenderer;
-class LevelSettings;
+#include "../world/level/LevelSettings.h"
 class IRakNetInstance;
 class NetEventCallback;
 class CommandServer;
@@ -65,7 +65,8 @@ public:
 
 	void handleBuildAction(BuildActionIntention*);
 
-	void toggleDimension(){}
+	void switchDimension(int targetDimension);
+	void toggleDimension();
 	bool isCreativeMode();
 	void setIsCreativeMode(bool isCreative);
 	void setScreen(Screen*);
@@ -177,6 +178,11 @@ public:
 
 	User*  user;
 	Level* level;
+	Level* overworldLevel;
+	Level* netherLevel;
+	std::string currentLevelId;
+	std::string currentLevelName;
+	LevelSettings currentSettings;
 
 	LocalPlayer*	player;
 	IInputHolder*	inputHolder;

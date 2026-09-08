@@ -10,6 +10,7 @@
 #include "LavaParticle.h"
 #include "RedDustParticle.h"
 #include "SmokeParticle.h"
+#include "PortalParticle.h"
 #include "TerrainParticle.h"
 #include "HugeExplosionSeedParticle.h"
 #include "HugeExplosionParticle.h"

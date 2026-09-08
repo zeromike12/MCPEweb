@@ -4,8 +4,11 @@
 //package net.minecraft.world.item;
 
 #include "Item.h"
+#include "ItemInstance.h"
 #include "../level/Level.h"
 #include "../level/tile/Tile.h"
+#include "../level/tile/FireTile.h"
+#include "../level/tile/PortalTile.h"
 #include "../entity/player/Player.h"
 
 class FlintAndSteelItem: public Item
@@ -19,8 +22,7 @@ public:
 		setMaxDamage(64);
     }
 
-    /*
-    bool useOn(ItemInstance* instance, Player* player, Level* level, int x, int y, int z, int face, float clickX, float clickY, float clickZ) {
+    virtual bool useOn(ItemInstance* instance, Player* player, Level* level, int x, int y, int z, int face, float clickX, float clickY, float clickZ) {
         if (face == 0) y--;
         if (face == 1) y++;
         if (face == 2) z--;
@@ -29,15 +31,22 @@ public:
         if (face == 5) x++;
 
         int targetType = level->getTile(x, y, z);
-        if (targetType == 0) {
-            level->playSound(x + 0.5, y + 0.5, z + 0.5, "fire.ignite", 1, sharedRandom.nextFloat() * 0.4f + 0.8f);
-            level->setTile(x, y, z, Tile::fire->id);
+        int fireId = Tile::fire ? Tile::fire->id : 51;
+
+        if (targetType == 0 || targetType == fireId) {
+            level->playSound(x + 0.5f, y + 0.5f, z + 0.5f, "random.click", 1.0f, level->random.nextFloat() * 0.4f + 0.8f);
+
+            // Attempt to activate a Nether Portal frame
+            if (!PortalTile::trySpawnPortal(level, x, y, z)) {
+                level->setTile(x, y, z, fireId);
+            }
         }
 
-        instance->hurt(1);
+        if (instance != NULL) {
+            instance->hurt(1);
+        }
         return true;
     }
-    */
 };
 
 #endif /*NET_MINECRAFT_WORLD_ITEM__FlintAndSteelItem_H__*/

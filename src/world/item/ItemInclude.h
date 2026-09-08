@@ -18,6 +18,7 @@
 #include "FoodItem.h"
 #include "LeafTileItem.h"
 #include "StoneSlabTileItem.h"
+#include "WoodTileItem.h"
 
 #include "ArmorItem.h"
 #include "BowItem.h"
@@ -32,5 +33,6 @@
 #include "SeedItem.h"
 #include "HangingEntityItem.h"
 #include "SignItem.h"
+#include "SpawnEggItem.h"
 
 #endif /*NET_MINECRAFT_WORLD_ITEM__ItemInclude_H__*/

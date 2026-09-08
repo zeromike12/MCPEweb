@@ -68,7 +68,10 @@ int getTimeMs() {
 }
 
 void sleepMs(int ms) {
-#ifdef WIN32
+#if defined(EMSCRIPTEN) || defined(__EMSCRIPTEN__)
+	// No-op on WebAssembly: sleeping on the main thread blocks the browser event loop
+	(void)ms;
+#elif defined(WIN32)
     Sleep(ms);
 #else
 	usleep(ms * 1000);

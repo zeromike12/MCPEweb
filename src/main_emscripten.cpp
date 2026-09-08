@@ -16,6 +16,7 @@
 
 static App* g_app = 0;
 static SDL_Window* g_window = 0;
+static SDL_GLContext g_glContext = 0;
 AppContext appContext;
 
 // Mouse state for delta tracking and drag-to-look
@@ -30,7 +31,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int emscripten_is_pointer_locked() {
 // and kept in sync on resize via emscripten_set_resize_callback.
 static int g_screenW = 854, g_screenH = 480;
 
-// Forward-declare so the resize callback can call idbfsReady's app pointer.
+// Forward-declare so the resize callback can call app pointer.
 static App* g_appPtr = nullptr;
 
 static EM_BOOL onWindowResize(int /*eventType*/, const EmscriptenUiEvent* e, void* /*userData*/) {
@@ -39,7 +40,7 @@ static EM_BOOL onWindowResize(int /*eventType*/, const EmscriptenUiEvent* e, voi
     if (newW < 1 || newH < 1) return EM_FALSE;
     g_screenW = newW;
     g_screenH = newH;
-    emscripten_set_canvas_element_size("canvas", newW, newH);
+    emscripten_set_canvas_element_size("#canvas", newW, newH);
     // Resize the SDL backing surface so OpenGL viewport matches the window
     if (g_window) SDL_SetWindowSize(g_window, newW, newH);
     // Tell the game its new logical dimensions
@@ -81,10 +82,14 @@ static int sdlKeyToGame(SDL_Keycode sym) {
 // Sync IDBFS saves to IndexedDB
 extern "C" void EMSCRIPTEN_KEEPALIVE syncSaves() {
     EM_ASM({
-        if (typeof FS !== 'undefined') {
-            FS.syncfs(false, function(err) {
-                if (err) console.error('FS.syncfs save error:', err);
-            });
+        if (typeof indexedDB !== 'undefined' && typeof FS !== 'undefined') {
+            try {
+                FS.syncfs(false, function(err) {
+                    if (err) console.error('FS.syncfs save error:', err);
+                });
+            } catch (e) {
+                console.warn('FS.syncfs save exception:', e);
+            }
         }
     });
 }
@@ -256,12 +261,14 @@ void main_loop() {
         return (document.pointerLockElement != null) ? 1 : 0;
     }) != 0;
 
-    if (g_app->wantToQuit()) {
+    if (g_app && g_app->wantToQuit()) {
         emscripten_cancel_main_loop();
         return;
     }
 
-    g_app->update();
+    if (g_app) {
+        g_app->update();
+    }
     SDL_GL_SwapWindow(g_window);
 }
 
@@ -270,11 +277,12 @@ int main(int argc, char* argv[]) {
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
-        printf("SDL_Init failed: %s\n", SDL_GetError());
+    // Initialize SDL (video is essential; audio subsystem is optional)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL_Init(SDL_INIT_VIDEO) failed: %s\n", SDL_GetError());
         return 1;
     }
+    SDL_InitSubSystem(SDL_INIT_AUDIO);
 
     // Request OpenGL ES 2.0 context (WebGL requires ES 2.0; LEGACY_GL_EMULATION handles ES 1.x on top)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -294,7 +302,7 @@ int main(int argc, char* argv[]) {
     g_screenW = screenW;
     g_screenH = screenH;
 
-    emscripten_set_canvas_element_size("canvas", screenW, screenH);
+    emscripten_set_canvas_element_size("#canvas", screenW, screenH);
 
     g_window = SDL_CreateWindow(
         "Minecraft",
@@ -307,53 +315,32 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SDL_GLContext glContext = SDL_GL_CreateContext(g_window);
-    if (!glContext) {
+    g_glContext = SDL_GL_CreateContext(g_window);
+    if (!g_glContext) {
         printf("SDL_GL_CreateContext failed: %s\n", SDL_GetError());
         return 1;
     }
+    SDL_GL_MakeCurrent(g_window, g_glContext);
 
-    // Mount IDBFS at the saves folder so worlds persist across page reloads
+    // Mount IDBFS in background so worlds persist across page reloads (if indexedDB is supported)
     EM_ASM({
-        try {
-            if (!FS.analyzePath('/games').exists) {
-                FS.mkdir('/games', 0777);
+        if (typeof indexedDB !== 'undefined') {
+            try {
+                if (!FS.analyzePath('/games').exists) {
+                    FS.mkdir('/games', 0777);
+                }
+                FS.mount(IDBFS, {}, '/games');
+                FS.syncfs(true, function(err) {
+                    if (err) console.warn('FS.syncfs load warning:', err);
+                    else console.log('IDBFS synced');
+                });
+            } catch (e) {
+                console.warn('IDBFS mount warning:', e);
             }
-        } catch (e) {
-            console.warn('mkdir /games error:', e);
         }
-        try {
-            FS.mount(IDBFS, {}, '/games');
-        } catch (e) {
-            console.warn('IDBFS mount warning:', e);
-        }
-
-        // Sync FROM IndexedDB first (load existing saves), then start game
-        FS.syncfs(true, function(err) {
-            if (err) console.warn('FS.syncfs load error:', err);
-            // Signal C++ that the FS is ready
-            if (typeof Module._idbfsReady === 'function') {
-                Module._idbfsReady();
-            } else if (typeof _idbfsReady === 'function') {
-                _idbfsReady();
-            } else {
-                console.error('idbfsReady function not found!');
-            }
-        });
     });
 
-    emscripten_exit_with_live_runtime();
-    return 0; // actual init continues in idbfsReady()
-}
-
-// Called from JS after IDBFS is synced and ready
-extern "C" EMSCRIPTEN_KEEPALIVE void idbfsReady() {
-    // Use the runtime window size (set during main() and kept up to date by resize callback)
-    int screenW = g_screenW;
-    int screenH = g_screenH;
-
     appContext.platform = new AppPlatform_emscripten();
-
     glInit();
 
     App* app = new MAIN_CLASS();
@@ -367,13 +354,20 @@ extern "C" EMSCRIPTEN_KEEPALIVE void idbfsReady() {
     // Register an Emscripten resize callback so the game tracks browser window changes
     emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, onWindowResize);
 
-    // Add pointer lock change listener
+    // Resume Web Audio on first user interaction if suspended
     EM_ASM({
-        document.addEventListener('pointerlockchange', function() {
-            // pointer lock state checked each frame via EM_ASM_INT
-        });
+        var unlockAudio = function() {
+            if (typeof AL !== 'undefined' && AL.currentCtx && AL.currentCtx.audioCtx && AL.currentCtx.audioCtx.state === 'suspended') {
+                AL.currentCtx.audioCtx.resume();
+            }
+        };
+        window.addEventListener('click', unlockAudio, { passive: true });
+        window.addEventListener('touchstart', unlockAudio, { passive: true });
+        window.addEventListener('keydown', unlockAudio, { passive: true });
     });
 
-    // Hook up emscripten loop
-    emscripten_set_main_loop(main_loop, 0, 1);
+    // Hook up emscripten loop (simulate_infinite_loop = 0 so it returns cleanly)
+    emscripten_set_main_loop(main_loop, 0, 0);
+
+    return 0;
 }

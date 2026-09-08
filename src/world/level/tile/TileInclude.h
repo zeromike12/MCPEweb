@@ -23,6 +23,7 @@
 #include "GrassTile.h"
 #include "GravelTile.h"
 #include "HeavyTile.h"
+#include "HellSandTile.h"
 #include "IceTile.h"
 #include "InvisibleTile.h"
 #include "LadderTile.h"
@@ -37,6 +38,7 @@
 #include "OreTile.h"
 #include "MetalTile.h"
 #include "NetherReactor.h"
+#include "PortalTile.h"
 #include "QuartzBlockTile.h"
 #include "RedStoneOreTile.h"
 #include "ReedTile.h"
@@ -57,6 +59,7 @@
 #include "TreeTile.h"
 #include "TntTile.h"
 #include "WebTile.h"
+#include "WoodTile.h"
 #include "WorkbenchTile.h"
 
 #endif /* TILE_INCLUDE_H__ */

@@ -209,6 +209,7 @@ public:
 	bool canRemove;
 	bool invisible;
 	bool reallyRemoveIfPlayer;
+	bool inPortal;
 protected:
 	static Random sharedRandom;
 	int airCapacity;

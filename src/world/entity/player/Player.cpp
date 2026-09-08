@@ -39,7 +39,11 @@ Player::Player(Level* level, bool isCreative)
 	bedOffsetY(0),
 	bedOffsetZ(0),
 	respawnPosition(0, -1, 0),
-	allPlayersSleeping(false)
+	allPlayersSleeping(false),
+	portalCounter(0),
+	portalCooldown(0),
+	portalTime(0.0f),
+	oPortalTime(0.0f)
 {
 	canRemove = false;
 

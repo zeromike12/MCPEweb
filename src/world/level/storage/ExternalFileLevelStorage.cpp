@@ -272,10 +272,6 @@ bool ExternalFileLevelStorage::readPlayerData(const std::string& filename, Level
 
 			// Fix coordinates
 			Vec3& pos = dest.playerData.pos;
-			if (pos.x < 0.5f) pos.x = 0.5f;
-			if (pos.z < 0.5f) pos.z = 0.5f;
-			if (pos.x > (LEVEL_WIDTH - 0.5f)) pos.x = LEVEL_WIDTH - 0.5f;
-			if (pos.z > (LEVEL_DEPTH - 0.5f)) pos.z = LEVEL_DEPTH - 0.5f;
 			if (pos.y < 0) pos.y = 64;
 
 			dest.playerDataVersion = version;

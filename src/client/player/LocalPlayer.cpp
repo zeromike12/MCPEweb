@@ -6,6 +6,7 @@
 #include "../../world/inventory/BaseContainerMenu.h"
 #include "../../world/item/BowItem.h"
 #include "../../world/level/Level.h"
+#include "../../world/level/dimension/Dimension.h"
 #include "../../world/level/tile/Tile.h"
 #include "../../world/level/tile/entity/TileEntity.h"
 #include "../../world/level/material/Material.h"
@@ -95,6 +96,30 @@ bool LocalPlayer::isSolidTile(int x, int y, int z) {
 void LocalPlayer::tick() {
 
 	super::tick();
+
+	oPortalTime = portalTime;
+	if (inPortal) {
+		if (portalCooldown > 0) {
+			portalCooldown--;
+			portalCounter = 0;
+		} else {
+			portalCounter++;
+			int maxPortalTime = (abilities.instabuild ? 10 : 80);
+			if (portalCounter >= maxPortalTime) {
+				portalCounter = 0;
+				portalCooldown = 100;
+				int targetDim = (dimension == Dimension::NETHER ? Dimension::NORMAL : Dimension::NETHER);
+				minecraft->switchDimension(targetDim);
+			}
+		}
+		inPortal = false;
+	} else {
+		if (portalCounter > 0) portalCounter -= 2;
+		if (portalCounter < 0) portalCounter = 0;
+		if (portalCooldown > 0) portalCooldown--;
+	}
+	portalTime = (float)portalCounter / (abilities.instabuild ? 10.0f : 80.0f);
+
 	if(!useItem.isNull()) {
 		ItemInstance* item = inventory->getSelected();
 		if(item != NULL && *item == useItem) {

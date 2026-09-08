@@ -9,6 +9,15 @@ DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 OBJ_DIR = os.path.join(SCRIPT_DIR, "obj")
 os.makedirs(OBJ_DIR, exist_ok=True)
 
+clean_build = "--clean" in sys.argv or "-c" in sys.argv
+if clean_build:
+    print("Performing clean build, removing obj/ ...")
+    for f in glob.glob(os.path.join(OBJ_DIR, "*")):
+        try:
+            os.remove(f)
+        except OSError:
+            pass
+
 EMCC = "/home/user/emscripten/emcc"
 EMPP = "/home/user/emscripten/em++"
 
@@ -27,7 +36,6 @@ COMPILE_FLAGS = [
 ]
 
 LINK_FLAGS = [
-    "-sASYNCIFY=1",
     "-sUSE_SDL=2",
     "-sUSE_LIBPNG=1",
     "-sLEGACY_GL_EMULATION=1",
@@ -42,7 +50,7 @@ LINK_FLAGS = [
     "-sEXIT_RUNTIME=0",
     "-sSTACK_OVERFLOW_CHECK=0",
     "-sASSERTIONS=1",
-    "-sEXPORTED_FUNCTIONS=['_main','_idbfsReady','_syncSaves','_malloc','_free']",
+    "-sEXPORTED_FUNCTIONS=['_main','_syncSaves','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap','lengthBytesUTF8','stringToUTF8']",
     "-O2",
 ]
@@ -59,16 +67,39 @@ for root, _, files in os.walk(SRC_DIR):
 
 print(f"Found {len(all_cpp)} source files to compile.")
 
+def needs_recompile(src, obj_path, dep_path):
+    if not os.path.exists(obj_path) or not os.path.exists(dep_path):
+        return True
+    obj_mtime = os.path.getmtime(obj_path)
+    if os.path.getmtime(src) > obj_mtime:
+        return True
+    try:
+        with open(dep_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        content = content.replace('\\\n', ' ').replace('\\ ', '__SPACE__')
+        parts = content.split(':', 1)
+        if len(parts) > 1:
+            deps = parts[1].split()
+            for dep in deps:
+                dep_file = dep.replace('__SPACE__', ' ').strip()
+                if dep_file and os.path.exists(dep_file):
+                    if os.path.getmtime(dep_file) > obj_mtime:
+                        return True
+    except Exception:
+        return True
+    return False
+
 def compile_source(src):
     rel = os.path.relpath(src, SRC_DIR)
-    obj_name = rel.replace("/", "_").replace("\\", "_") + ".o"
-    obj_path = os.path.join(OBJ_DIR, obj_name)
+    base_name = rel.replace("/", "_").replace("\\", "_")
+    obj_path = os.path.join(OBJ_DIR, base_name + ".o")
+    dep_path = os.path.join(OBJ_DIR, base_name + ".d")
     
-    # Check modification time
-    if os.path.exists(obj_path) and os.path.getmtime(obj_path) >= os.path.getmtime(src):
+    # Check dependencies and modification time
+    if not needs_recompile(src, obj_path, dep_path):
         return (src, obj_path, True, "")
     
-    cmd = [EMPP, "-c", src, "-o", obj_path] + COMPILE_FLAGS
+    cmd = [EMPP, "-c", src, "-o", obj_path, "-MMD", "-MF", dep_path] + COMPILE_FLAGS
     res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if res.returncode != 0:
         return (src, obj_path, False, res.stderr + "\n" + res.stdout)
