@@ -74,7 +74,11 @@ bool PortalForcer::createPortal(Level* level, int x, int z, int targetDim, int& 
 		}
 	}
 
-	// Build obsidian portal frame along X-axis (width 4, height 5)
+	// Build obsidian portal frame along X-axis (width 4, height 5).
+	// Suppress neighbour updates so the partially built portal doesn't tear
+	// itself down (see PortalTile::neighborChanged).
+	bool oldNoUpdate = level->noNeighborUpdate;
+	level->noNeighborUpdate = true;
 	for (int ix = 0; ix < 4; ix++) {
 		for (int iy = -1; iy < 4; iy++) {
 			for (int iz = -1; iz <= 1; iz++) {
@@ -101,6 +105,8 @@ bool PortalForcer::createPortal(Level* level, int x, int z, int targetDim, int& 
 			}
 		}
 	}
+
+	level->noNeighborUpdate = oldNoUpdate;
 
 	outX = x + 1;
 	outY = baseY;
