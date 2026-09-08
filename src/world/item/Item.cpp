@@ -156,6 +156,8 @@ Item* Item::netherQuartz = NULL;
 
 Item* Item::camera = NULL;
 
+Item* Item::spawnEgg = NULL;
+
 /*static*/
 void Item::initItems() {
 	static bool isInited = false;
@@ -286,6 +288,8 @@ void Item::initItems() {
 	//Item::record_01 = (new RecordingItem(2000, "13"))->setIcon(0, 15)->setCategory(ItemCategory::Decorations)->setDescriptionId("record");
 	//Item::record_02 = (new RecordingItem(2001, "cat"))->setIcon(1, 15)->setCategory(ItemCategory::Decorations)->setDescriptionId("record");
 	Item::camera = (new CameraItem(200))->setIcon(2, 15)->setCategory(ItemCategory::Decorations)->setDescriptionId("camera");
+
+	Item::spawnEgg = (new SpawnEggItem(127))->setIcon(12, 0)->setCategory(ItemCategory::Decorations)->setDescriptionId("monsterPlacer");
 
 	for (int i = 256; i < MAX_ITEMS; ++i) {
 		if (items[i] && items[i]->category == -1)

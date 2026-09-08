@@ -206,6 +206,8 @@ public:
 
 	static Item* camera;
 
+	static Item* spawnEgg;
+
 	static void initItems();
 	static void teardownItems();
 
