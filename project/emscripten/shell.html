@@ -82,15 +82,18 @@
         })();
     </script>
     <script type='text/javascript'>
+        // Clear any old service worker and caches to ensure latest WASM/JS runs immediately
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    }, err => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                for (var registration of registrations) {
+                    registration.unregister();
+                }
             });
+            if ('caches' in window) {
+                caches.keys().then(function (names) {
+                    for (var name of names) caches.delete(name);
+                });
+            }
         }
     </script>
     {{{ SCRIPT }}}

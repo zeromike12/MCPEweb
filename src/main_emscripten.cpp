@@ -39,7 +39,7 @@ static EM_BOOL onWindowResize(int /*eventType*/, const EmscriptenUiEvent* e, voi
     if (newW < 1 || newH < 1) return EM_FALSE;
     g_screenW = newW;
     g_screenH = newH;
-    emscripten_set_canvas_element_size("canvas", newW, newH);
+    emscripten_set_canvas_element_size("#canvas", newW, newH);
     // Resize the SDL backing surface so OpenGL viewport matches the window
     if (g_window) SDL_SetWindowSize(g_window, newW, newH);
     // Tell the game its new logical dimensions
@@ -294,7 +294,7 @@ int main(int argc, char* argv[]) {
     g_screenW = screenW;
     g_screenH = screenH;
 
-    emscripten_set_canvas_element_size("canvas", screenW, screenH);
+    emscripten_set_canvas_element_size("#canvas", screenW, screenH);
 
     g_window = SDL_CreateWindow(
         "Minecraft",
@@ -315,6 +315,22 @@ int main(int argc, char* argv[]) {
 
     // Mount IDBFS at the saves folder so worlds persist across page reloads
     EM_ASM({
+        var called = false;
+        var startApp = function() {
+            if (called) return;
+            called = true;
+            if (typeof Module._idbfsReady === 'function') {
+                Module._idbfsReady();
+            } else if (typeof _idbfsReady === 'function') {
+                _idbfsReady();
+            } else {
+                console.error('idbfsReady function not found!');
+            }
+        };
+
+        // Fallback in case syncfs takes too long or is blocked
+        setTimeout(startApp, 500);
+
         try {
             if (!FS.analyzePath('/games').exists) {
                 FS.mkdir('/games', 0777);
@@ -329,20 +345,17 @@ int main(int argc, char* argv[]) {
         }
 
         // Sync FROM IndexedDB first (load existing saves), then start game
-        FS.syncfs(true, function(err) {
-            if (err) console.warn('FS.syncfs load error:', err);
-            // Signal C++ that the FS is ready
-            if (typeof Module._idbfsReady === 'function') {
-                Module._idbfsReady();
-            } else if (typeof _idbfsReady === 'function') {
-                _idbfsReady();
-            } else {
-                console.error('idbfsReady function not found!');
-            }
-        });
+        try {
+            FS.syncfs(true, function(err) {
+                if (err) console.warn('FS.syncfs load error:', err);
+                startApp();
+            });
+        } catch (e) {
+            console.warn('syncfs error:', e);
+            startApp();
+        }
     });
 
-    emscripten_exit_with_live_runtime();
     return 0; // actual init continues in idbfsReady()
 }
 
@@ -374,6 +387,6 @@ extern "C" EMSCRIPTEN_KEEPALIVE void idbfsReady() {
         });
     });
 
-    // Hook up emscripten loop
-    emscripten_set_main_loop(main_loop, 0, 1);
+    // Hook up emscripten loop (simulate_infinite_loop = 0 so it does not throw ExitStatus)
+    emscripten_set_main_loop(main_loop, 0, 0);
 }
