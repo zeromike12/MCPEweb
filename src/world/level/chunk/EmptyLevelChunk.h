@@ -53,16 +53,7 @@ public:
     }
 
     int getTile(int x, int y, int z) {
-		//if (y <= 1)
-		//{
-		//	return Tile::unbreakable->id;
-		//}
-		//else if (y < 64)
-		//{
-		//	return Tile::water->id;
-		//}
-		//return 0;
-        return Tile::invisible_bedrock->id;
+        return 0;
     }
 
     bool setTileAndData(int x, int y, int z, int _tile, int _data) {
@@ -82,7 +73,7 @@ public:
     }
 
     int getBrightness(const LightLayer& layer, int x, int y, int z) {
-        return 7;
+        return &layer == &LightLayer::Sky ? 15 : 0;
     }
 
     void setBrightness(const LightLayer& layer, int x, int y, int z, int brightness) {
@@ -90,7 +81,7 @@ public:
     }
 
     int getRawBrightness(int x, int y, int z, int skyDampen) {
-        return 7;
+        return 15;
     }
 
     void addEntity(Entity* e) {
@@ -106,29 +97,12 @@ public:
     }
 
     bool isSkyLit(int x, int y, int z) {
-        return false;
+        return true;
     }
 
     void skyBrightnessChanged() {
         return;
     }
-/*
-    TileEntity getTileEntity(int x, int y, int z) {
-        return NULL;
-    }
-
-    void addTileEntity(TileEntity te) {
-        return;
-    }
-
-    void setTileEntity(int x, int y, int z, TileEntity tileEntity) {
-        return;
-    }
-
-    void removeTileEntity(int x, int y, int z) {
-        return;
-    }
-	*/
 
     void load() {
         return;
@@ -145,19 +119,6 @@ public:
 	void getEntities(Entity* except, const AABB& bb, std::vector<Entity*>& es) {
         return;
     }
-	/*
-    void getEntitiesOfClass(Class<? extends Entity> baseClass, AABB bb, List<Entity> es) {
-        return;
-    }
-
-    int countEntities() {
-        return 0;
-    }
-
-    bool shouldSave(bool force) {
-        return false;
-    }
-*/
 
     void setBlocks(unsigned char* newBlocks, int sub) {
         return;
@@ -171,7 +132,7 @@ public:
         int s = xs * ys * zs;
         int len = s + s / 2 * 3;
 
-		memset(data + p, Tile::invisible_bedrock->id, len); //Arrays.fill(data, p, p + len, (char) 0);
+		memset(data + p, 0, len);
         return len;
     }
 

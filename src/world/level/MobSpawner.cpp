@@ -38,11 +38,19 @@ int MobSpawner::tick(Level* level, bool spawnEnemies, bool spawnFriendlies) {
 	// (The code above is the same as in the java version)
 	// This code goes over the whole map one "row" at a time
 
-	// Spawn friendlies == loop over whole map, and disable Monster spawning this tick
+	// Spawn friendlies == loop over chunks around players, and disable Monster spawning this tick
 	if (spawnFriendlies) {
 		spawnEnemies = false;
-		for (int i = 0; i < 256; ++i)
-			chunksToPoll.insert( std::make_pair( ChunkPos(i>>4, i&15), false) );
+		for (size_t pi = 0; pi < level->players.size(); ++pi) {
+			Player* p = level->players[pi];
+			int xx = Mth::floor(p->x / 16);
+			int zz = Mth::floor(p->z / 16);
+			int r = 8;
+			for (int x = -r; x <= r; x++)
+			for (int z = -r; z <= r; z++) {
+				chunksToPoll.insert(std::make_pair(ChunkPos(xx + x, zz + z), false));
+			}
+		}
 
 	} else {
 		// Only spawn mobs, check around one player per tick (@todo: optimize the "count instances of"?)
@@ -57,8 +65,7 @@ int MobSpawner::tick(Level* level, bool spawnEnemies, bool spawnFriendlies) {
 			for (int z = -r; z <= r; z++) {
 				const int cx = xx + x;
 				const int cz = zz + z;
-				if (cx >= 0 && cx < 16 && cz >= 0 && cz < 16)
-					chunksToPoll.insert(std::make_pair(ChunkPos(cx, cz), false ));
+				chunksToPoll.insert(std::make_pair(ChunkPos(cx, cz), false ));
 			}
 		}
 	}

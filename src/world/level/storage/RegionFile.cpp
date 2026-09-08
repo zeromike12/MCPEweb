@@ -96,6 +96,11 @@ void RegionFile::close()
 
 bool RegionFile::readChunk(int x, int z, RakNet::BitStream** destChunkData)
 {
+	if (x < 0 || x >= SECTOR_COLS || z < 0 || z >= SECTOR_COLS)
+	{
+		return false;
+	}
+
 	int offset = offsets[x + z * SECTOR_COLS];
 
 	if (offset == 0)
@@ -127,6 +132,11 @@ bool RegionFile::readChunk(int x, int z, RakNet::BitStream** destChunkData)
 
 bool RegionFile::writeChunk(int x, int z, RakNet::BitStream& chunkData)
 {
+	if (x < 0 || x >= SECTOR_COLS || z < 0 || z >= SECTOR_COLS)
+	{
+		return false;
+	}
+
 	int size = chunkData.GetNumberOfBytesUsed() + sizeof(int);
 
 	int offset = offsets[x + z * SECTOR_COLS];
