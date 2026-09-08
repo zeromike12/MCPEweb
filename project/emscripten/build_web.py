@@ -27,7 +27,6 @@ COMPILE_FLAGS = [
 ]
 
 LINK_FLAGS = [
-    "-sASYNCIFY=1",
     "-sUSE_SDL=2",
     "-sUSE_LIBPNG=1",
     "-sLEGACY_GL_EMULATION=1",

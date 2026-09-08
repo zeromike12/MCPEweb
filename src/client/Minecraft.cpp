@@ -383,9 +383,6 @@ void Minecraft::prepareLevel(const std::string& title) {
         for (int z = 8; z < (CHUNK_CACHE_WIDTH * CHUNK_WIDTH); z += CHUNK_WIDTH) {
             progressStagePercentage = 100 * pp++ / Max;
             //printf("level generation progress %d\n", progressStagePercentage);
-#ifdef __EMSCRIPTEN__
-            if ((pp & 3) == 0) emscripten_sleep(0); // Yield so ProgressScreen can render
-#endif
 			B.start();
             level->getTile(x, 64, z);
 			B.stop();

@@ -82,10 +82,14 @@ static int sdlKeyToGame(SDL_Keycode sym) {
 // Sync IDBFS saves to IndexedDB
 extern "C" void EMSCRIPTEN_KEEPALIVE syncSaves() {
     EM_ASM({
-        if (typeof FS !== 'undefined') {
-            FS.syncfs(false, function(err) {
-                if (err) console.error('FS.syncfs save error:', err);
-            });
+        if (typeof indexedDB !== 'undefined' && typeof FS !== 'undefined') {
+            try {
+                FS.syncfs(false, function(err) {
+                    if (err) console.error('FS.syncfs save error:', err);
+                });
+            } catch (e) {
+                console.warn('FS.syncfs save exception:', e);
+            }
         }
     });
 }
@@ -273,11 +277,12 @@ int main(int argc, char* argv[]) {
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
-        printf("SDL_Init failed: %s\n", SDL_GetError());
+    // Initialize SDL (video is essential; audio subsystem is optional)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL_Init(SDL_INIT_VIDEO) failed: %s\n", SDL_GetError());
         return 1;
     }
+    SDL_InitSubSystem(SDL_INIT_AUDIO);
 
     // Request OpenGL ES 2.0 context (WebGL requires ES 2.0; LEGACY_GL_EMULATION handles ES 1.x on top)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -317,23 +322,21 @@ int main(int argc, char* argv[]) {
     }
     SDL_GL_MakeCurrent(g_window, g_glContext);
 
-    // Mount IDBFS in background so worlds persist across page reloads
+    // Mount IDBFS in background so worlds persist across page reloads (if indexedDB is supported)
     EM_ASM({
-        try {
-            if (!FS.analyzePath('/games').exists) {
-                FS.mkdir('/games', 0777);
+        if (typeof indexedDB !== 'undefined') {
+            try {
+                if (!FS.analyzePath('/games').exists) {
+                    FS.mkdir('/games', 0777);
+                }
+                FS.mount(IDBFS, {}, '/games');
+                FS.syncfs(true, function(err) {
+                    if (err) console.warn('FS.syncfs load warning:', err);
+                    else console.log('IDBFS synced');
+                });
+            } catch (e) {
+                console.warn('IDBFS mount warning:', e);
             }
-        } catch (e) {
-            console.warn('mkdir /games warning:', e);
-        }
-        try {
-            FS.mount(IDBFS, {}, '/games');
-            FS.syncfs(true, function(err) {
-                if (err) console.warn('FS.syncfs load warning:', err);
-                else console.log('IDBFS synced');
-            });
-        } catch (e) {
-            console.warn('IDBFS mount warning:', e);
         }
     });
 
