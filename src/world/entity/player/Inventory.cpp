@@ -7,6 +7,7 @@
 #include "../../item/crafting/Recipe.h"
 #include "../../item/CoalItem.h"
 #include "../../level/tile/SandStoneTile.h"
+#include "../../entity/EntityTypes.h"
 
 Inventory::Inventory( Player* player, bool creativeMode )
 :   super(	36 + Inventory::MAX_SELECTION_SIZE,
@@ -254,6 +255,17 @@ void Inventory::setupDefault() {
 #endif
 		addItem(new ItemInstance(Item::bow));
 		addItem(new ItemInstance(Item::sign));
+
+		// Spawn Eggs
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Chicken));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Cow));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Pig));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Sheep));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Zombie));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Creeper));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Skeleton));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::Spider));
+		addItem(new ItemInstance(Item::spawnEgg, 1, MobTypes::PigZombie));
 	} else {
 #if defined(WIN32)
 		// Survival
