@@ -27,6 +27,7 @@ public:
 
 	BinaryBlob readAssetFile(const std::string& filename) {
 		FILE* fp = fopen(("/data/" + filename).c_str(), "rb");
+		if (!fp) fp = fopen(filename.c_str(), "rb");
 		if (!fp) return BinaryBlob();
 		int size = getRemainingFileSize(fp);
 		BinaryBlob blob;
@@ -44,8 +45,16 @@ public:
 		TextureData out;
 		std::string filename = textureFolder ? "/data/images/" + filename_ : filename_;
         FILE* fp = fopen(filename.c_str(), "rb");
+        if (!fp) {
+            std::string fallback = "/data/images/" + filename_;
+            fp = fopen(fallback.c_str(), "rb");
+            if (!fp) {
+                fallback = "/data/" + filename_;
+                fp = fopen(fallback.c_str(), "rb");
+            }
+        }
 		if (!fp) {
-			LOGI("Couldn't find file: %s\n", filename.c_str());
+			LOGI("Couldn't find file: %s\n", filename_.c_str());
 			return out;
 		}
 

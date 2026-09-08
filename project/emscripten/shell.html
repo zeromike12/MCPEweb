@@ -49,36 +49,10 @@
         (function () {
             var canvas = document.getElementById('canvas');
 
-            // Handle Native Mouse Clicks to lock pointer only for REAL mice
-            canvas.addEventListener('mousedown', function (e) {
-                if (e.isTrusted && !document.pointerLockElement && !window.mcMenuOpen) {
-                    canvas.requestPointerLock();
-                }
-            });
-
-            // Prevent default touch behaviors on the canvas (like scrolling, pinch-zoom, pull-to-refresh)
-            var preventTouchDefault = function (e) {
-                e.preventDefault();
-            };
-            canvas.addEventListener('touchstart', preventTouchDefault, { passive: false });
-            canvas.addEventListener('touchmove', preventTouchDefault, { passive: false });
-            canvas.addEventListener('touchend', preventTouchDefault, { passive: false });
-            canvas.addEventListener('touchcancel', preventTouchDefault, { passive: false });
-
-            // Block document-level default touch behaviours (scroll / zoom),
-            // but allow user input on dialogs/modals
-            document.addEventListener('touchstart', function (e) {
-                var t = e.target.tagName;
-                if (t !== 'INPUT' && t !== 'TEXTAREA' && t !== 'BUTTON' && t !== 'SELECT' && t !== 'OPTION') {
-                    e.preventDefault();
-                }
-            }, { passive: false });
-            document.addEventListener('touchmove', function (e) {
-                var t = e.target.tagName;
-                if (t !== 'INPUT' && t !== 'TEXTAREA' && t !== 'BUTTON' && t !== 'SELECT' && t !== 'OPTION') {
-                    e.preventDefault();
-                }
-            }, { passive: false });
+            // Prevent default touch gestures (pinch-zoom, pull-down-refresh) on the document
+            document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+            document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+            document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
         })();
     </script>
     <script type='text/javascript'>

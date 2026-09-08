@@ -16,6 +16,7 @@
 
 static App* g_app = 0;
 static SDL_Window* g_window = 0;
+static SDL_GLContext g_glContext = 0;
 AppContext appContext;
 
 // Mouse state for delta tracking and drag-to-look
@@ -30,7 +31,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int emscripten_is_pointer_locked() {
 // and kept in sync on resize via emscripten_set_resize_callback.
 static int g_screenW = 854, g_screenH = 480;
 
-// Forward-declare so the resize callback can call idbfsReady's app pointer.
+// Forward-declare so the resize callback can call app pointer.
 static App* g_appPtr = nullptr;
 
 static EM_BOOL onWindowResize(int /*eventType*/, const EmscriptenUiEvent* e, void* /*userData*/) {
@@ -256,12 +257,14 @@ void main_loop() {
         return (document.pointerLockElement != null) ? 1 : 0;
     }) != 0;
 
-    if (g_app->wantToQuit()) {
+    if (g_app && g_app->wantToQuit()) {
         emscripten_cancel_main_loop();
         return;
     }
 
-    g_app->update();
+    if (g_app) {
+        g_app->update();
+    }
     SDL_GL_SwapWindow(g_window);
 }
 
@@ -307,66 +310,34 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SDL_GLContext glContext = SDL_GL_CreateContext(g_window);
-    if (!glContext) {
+    g_glContext = SDL_GL_CreateContext(g_window);
+    if (!g_glContext) {
         printf("SDL_GL_CreateContext failed: %s\n", SDL_GetError());
         return 1;
     }
+    SDL_GL_MakeCurrent(g_window, g_glContext);
 
-    // Mount IDBFS at the saves folder so worlds persist across page reloads
+    // Mount IDBFS in background so worlds persist across page reloads
     EM_ASM({
-        var called = false;
-        var startApp = function() {
-            if (called) return;
-            called = true;
-            if (typeof Module._idbfsReady === 'function') {
-                Module._idbfsReady();
-            } else if (typeof _idbfsReady === 'function') {
-                _idbfsReady();
-            } else {
-                console.error('idbfsReady function not found!');
-            }
-        };
-
-        // Fallback in case syncfs takes too long or is blocked
-        setTimeout(startApp, 500);
-
         try {
             if (!FS.analyzePath('/games').exists) {
                 FS.mkdir('/games', 0777);
             }
         } catch (e) {
-            console.warn('mkdir /games error:', e);
+            console.warn('mkdir /games warning:', e);
         }
         try {
             FS.mount(IDBFS, {}, '/games');
+            FS.syncfs(true, function(err) {
+                if (err) console.warn('FS.syncfs load warning:', err);
+                else console.log('IDBFS synced');
+            });
         } catch (e) {
             console.warn('IDBFS mount warning:', e);
         }
-
-        // Sync FROM IndexedDB first (load existing saves), then start game
-        try {
-            FS.syncfs(true, function(err) {
-                if (err) console.warn('FS.syncfs load error:', err);
-                startApp();
-            });
-        } catch (e) {
-            console.warn('syncfs error:', e);
-            startApp();
-        }
     });
 
-    return 0; // actual init continues in idbfsReady()
-}
-
-// Called from JS after IDBFS is synced and ready
-extern "C" EMSCRIPTEN_KEEPALIVE void idbfsReady() {
-    // Use the runtime window size (set during main() and kept up to date by resize callback)
-    int screenW = g_screenW;
-    int screenH = g_screenH;
-
     appContext.platform = new AppPlatform_emscripten();
-
     glInit();
 
     App* app = new MAIN_CLASS();
@@ -380,13 +351,20 @@ extern "C" EMSCRIPTEN_KEEPALIVE void idbfsReady() {
     // Register an Emscripten resize callback so the game tracks browser window changes
     emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, onWindowResize);
 
-    // Add pointer lock change listener
+    // Resume Web Audio on first user interaction if suspended
     EM_ASM({
-        document.addEventListener('pointerlockchange', function() {
-            // pointer lock state checked each frame via EM_ASM_INT
-        });
+        var unlockAudio = function() {
+            if (typeof AL !== 'undefined' && AL.currentCtx && AL.currentCtx.audioCtx && AL.currentCtx.audioCtx.state === 'suspended') {
+                AL.currentCtx.audioCtx.resume();
+            }
+        };
+        window.addEventListener('click', unlockAudio, { passive: true });
+        window.addEventListener('touchstart', unlockAudio, { passive: true });
+        window.addEventListener('keydown', unlockAudio, { passive: true });
     });
 
-    // Hook up emscripten loop (simulate_infinite_loop = 0 so it does not throw ExitStatus)
+    // Hook up emscripten loop (simulate_infinite_loop = 0 so it returns cleanly)
     emscripten_set_main_loop(main_loop, 0, 0);
+
+    return 0;
 }

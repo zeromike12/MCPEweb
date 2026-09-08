@@ -42,7 +42,7 @@ LINK_FLAGS = [
     "-sEXIT_RUNTIME=0",
     "-sSTACK_OVERFLOW_CHECK=0",
     "-sASSERTIONS=1",
-    "-sEXPORTED_FUNCTIONS=['_main','_idbfsReady','_syncSaves','_malloc','_free']",
+    "-sEXPORTED_FUNCTIONS=['_main','_syncSaves','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap','lengthBytesUTF8','stringToUTF8']",
     "-O2",
 ]
