@@ -35,6 +35,7 @@
 #include "gui/Font.h"
 #include "gui/screens/RenameMPLevelScreen.h"
 #include "sound/SoundEngine.h"
+#include "../world/rpg/RpgDungeons.h"
 #endif
 #include "../platform/CThread.h"
 #include "../platform/input/Mouse.h"
@@ -524,6 +525,7 @@ void Minecraft::prepareLevel(const std::string& title) {
 	progressStageStatusId = 3;
 	if (level->isNew()) {
 		level->setInitialSpawn(); // @note: should obviously be called from Level itself
+		RpgDungeons::generate(level); // RPG mode: scatter dungeons before the first save
 		level->saveLevelData();
 		level->getChunkSource()->saveAll(false);
 		level->saveGame();

@@ -68,7 +68,8 @@ Mob::Mob(Level* level)
 	lastHurt(0),
 	dmgSpill(0),
 	bypassArmor(false),
-	rpgLevelAssigned(false)
+	rpgLevelAssigned(false),
+	persistent(false)
 {
 	entityData.define(SharedFlagsInformation::DATA_SHARED_FLAGS_ID, (SynchedEntityData::TypeChar) 0);
 	entityData.define(DATA_AIR_SUPPLY_ID, (SynchedEntityData::TypeShort) TOTAL_AIR_SUPPLY);
@@ -664,6 +665,7 @@ void Mob::addAdditonalSaveData( CompoundTag* entityTag )
 {
 	entityTag->putShort("Health", (short) health);
 	entityTag->putShort("RpgLevel", (short) getRpgLevel());
+	if (persistent) entityTag->putBoolean("Persistent", true);
 	entityTag->putShort("HurtTime", (short) hurtTime);
 	entityTag->putShort("DeathTime", (short) deathTime);
 	entityTag->putShort("AttackTime", (short) attackTime);
@@ -676,6 +678,7 @@ void Mob::readAdditionalSaveData( CompoundTag* tag )
 	health = tag->getShort("Health");
 	int rpgLevel = tag->getShort("RpgLevel");
 	if (rpgLevel > 0) setRpgLevel(rpgLevel);
+	persistent = tag->getBoolean("Persistent");
 	hurtTime = tag->getShort("HurtTime");
 	deathTime = tag->getShort("DeathTime");
 	attackTime = tag->getShort("AttackTime");
@@ -1094,6 +1097,10 @@ void Mob::checkDespawn() {
 }
 
 void Mob::checkDespawn(Mob* nearestBlocking) {
+	if (persistent) {
+		noActionTime = 0;
+		return;
+	}
 	if (nearestBlocking != NULL) {
 		const bool removeIfFar = removeWhenFarAway();
 		float xd = nearestBlocking->x - x;

@@ -132,8 +132,10 @@ namespace Rpg {
 	// Tries to place a loot chest somewhere in the chunk starting at (xo, zo).
 	void  placeLootChest(Level* level, int xo, int zo, Random* random);
 
-	// Fills a container-like item array with loot.
-	void  fillLootChest(Level* level, int x, int y, int z, Random* random);
+	// Fills the chest at (x, y, z) with loot. quality: 0 = world chest,
+	// 1 = dungeon chest, 2 = dungeon boss chest (more gear, better tiers,
+	// guaranteed legendary).
+	void  fillLootChest(Level* level, int x, int y, int z, Random* random, int quality = 0);
 }
 
 #endif /*NET_MINECRAFT_WORLD_RPG__Rpg_H__*/

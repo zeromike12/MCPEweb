@@ -188,6 +188,8 @@ public:
 	int lastHealth;
 	static const int DATA_RPG_LEVEL_ID = 15;
 	bool rpgLevelAssigned;
+	/// Persistent mobs (dungeon guards) never despawn. Saved as "Persistent".
+	bool persistent;
 
 	int hurtTime;
 	int hurtDuration;

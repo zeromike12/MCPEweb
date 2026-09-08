@@ -447,9 +447,12 @@ static Item* pickArmor(Random* random, int tierRoll) {
 	return cloth[slot];
 }
 
-void fillLootChest(Level* level, int x, int y, int z, Random* random) {
+void fillLootChest(Level* level, int x, int y, int z, Random* random, int quality) {
 	ChestTileEntity* chest = dynamic_cast<ChestTileEntity*>(level->getTileEntity(x, y, z));
 	if (!chest) return;
+	if (quality < 0) quality = 0;
+	if (quality > 2) quality = 2;
+	const bool rpg = isEnabled(level);
 
 	const int size = chest->getContainerSize();
 
@@ -457,11 +460,11 @@ void fillLootChest(Level* level, int x, int y, int z, Random* random) {
 	Pos spawn = level->getSharedSpawnPos();
 	float dx = (float) x - spawn.x;
 	float dz = (float) z - spawn.z;
-	int distBonus = (int) (std::sqrt(dx * dx + dz * dz) / 10.0f);
-	if (distBonus > 40) distBonus = 40;
+	int distBonus = (int) (std::sqrt(dx * dx + dz * dz) / 10.0f) + quality * 15;
+	if (distBonus > 55) distBonus = 55;
 
-	// 2-4 pieces of gear, at least one weapon and one armor piece
-	int gearCount = 2 + random->nextInt(3);
+	// 2-4 pieces of gear (+1 per quality tier), at least one weapon and one armor piece
+	int gearCount = 2 + random->nextInt(3) + quality;
 	for (int i = 0; i < gearCount; ++i) {
 		int tierRoll = random->nextInt(100) + distBonus;
 		if (tierRoll > 99) tierRoll = 99;
@@ -473,8 +476,11 @@ void fillLootChest(Level* level, int x, int y, int z, Random* random) {
 		ItemInstance inst(item, 1, 0);
 		// Every piece of chest gear is modified; ~12% are legendary (rollLootModifier
 		// is 30% legendary, and we only ask for a modifier 40% of the time otherwise).
-		bool forceLegendary = random->nextInt(100) < 8;
-		inst.setModifier(rollLootModifier(inst, random, forceLegendary));
+		if (rpg) {
+			bool forceLegendary = random->nextInt(100) < 8 + quality * 12;
+			if (quality == 2 && i == 0) forceLegendary = true; // boss chests always hold a legendary
+			inst.setModifier(rollLootModifier(inst, random, forceLegendary));
+		}
 
 		int slot = random->nextInt(size);
 		for (int tries = 0; tries < size; ++tries) {
@@ -486,7 +492,7 @@ void fillLootChest(Level* level, int x, int y, int z, Random* random) {
 	}
 
 	// Some consumables
-	int extraCount = 1 + random->nextInt(3);
+	int extraCount = 1 + random->nextInt(3) + quality;
 	for (int i = 0; i < extraCount; ++i) {
 		ItemInstance inst;
 		switch (random->nextInt(6)) {
