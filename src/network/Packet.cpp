@@ -196,17 +196,22 @@ namespace PacketUtil
 		short id			= item.id;
 		unsigned char count = item.count;
 		short aux			= item.getAuxValue();
+		short modifier		= item.getModifier();
 		stream->Write(id);
 		stream->Write(count);
 		stream->Write(aux);
+		stream->Write(modifier);
 	}
 
 	ItemInstance readItemInstance(RakNet::BitStream* stream) {
-		short id, aux;
+		short id, aux, modifier = 0;
 		unsigned char count;
 		stream->Read(id);
 		stream->Read(count);
 		stream->Read(aux);
-		return ItemInstance(id, count, aux);
+		stream->Read(modifier);
+		ItemInstance result(id, count, aux);
+		result.setModifier(modifier);
+		return result;
 	}
 }

@@ -123,6 +123,7 @@ public:
 	virtual EntityRendererId queryEntityRenderer() { return ER_DEFAULT_RENDERER; }
 
 	virtual bool isMob() { return false; }
+	bool isFireImmune() const { return fireImmune; }
 	// I hate myself
 	virtual bool isItemEntity();
 	// Me 2

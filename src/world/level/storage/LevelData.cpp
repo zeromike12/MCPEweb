@@ -16,7 +16,7 @@ LevelData::LevelData()
 	loadedPlayerTag(NULL)
 {
 	//LOGI("ctor 1: %p\n", this);
-	spawnMobs = (gameType == GameType::Survival);
+	spawnMobs = GameType::isSurvivalLike(gameType);
 }
 
 LevelData::LevelData( const LevelSettings& settings, const std::string& levelName, int generatorVersion /*= -1*/ )
@@ -38,7 +38,7 @@ LevelData::LevelData( const LevelSettings& settings, const std::string& levelNam
 		generatorVersion = SharedConstants::GeneratorVersion;
 
 	this->generatorVersion = generatorVersion;
-	spawnMobs = (gameType == GameType::Survival);
+	spawnMobs = GameType::isSurvivalLike(gameType);
 }
 
 LevelData::LevelData( CompoundTag* tag )
@@ -190,7 +190,7 @@ void LevelData::getTagData( const CompoundTag* tag )
 	levelName = tag->getString("LevelName");
 	storageVersion = tag->getInt("StorageVersion");
 
-	spawnMobs = (gameType == GameType::Survival);
+	spawnMobs = GameType::isSurvivalLike(gameType);
 
 	if (tag->contains("Player", Tag::TAG_Compound)) {
 		setPlayerTag(tag->getCompound("Player"));

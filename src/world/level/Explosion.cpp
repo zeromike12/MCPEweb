@@ -3,6 +3,7 @@
 #include "Level.h"
 #include "tile/Tile.h"
 #include "../entity/Entity.h"
+#include "../entity/Mob.h"
 
 
 Explosion::Explosion(Level* level, Entity* source, float x, float y, float z, float r)
@@ -85,7 +86,9 @@ void Explosion::explode()
 
 					float sp = level->getSeenPercent(center, e->bb);
 					float pow = (1 - dist) * sp;
-					e->hurt(source, (int) ((pow * pow + pow) / 2 * 8 * r + 1));
+					int explosionDamage = (int) ((pow * pow + pow) / 2 * 8 * r + 1);
+					if (source && source->isMob()) explosionDamage = ((Mob*) source)->getScaledAttackDamage(explosionDamage);
+					e->hurt(source, explosionDamage);
 
 					float push = pow;
 					e->xd += xa * push;

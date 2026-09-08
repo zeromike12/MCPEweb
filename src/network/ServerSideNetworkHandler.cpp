@@ -214,9 +214,9 @@ void ServerSideNetworkHandler::handle(const RakNet::RakNetGUID& source, LoginPac
         RakNet::BitStream bitStream;
 
         // @todo: Read from LevelData?
-		int gameType = minecraft->isCreativeMode()
-			? GameType::Creative
-			: GameType::Survival;
+		int gameType = level->getLevelData()->getGameType();
+		if (gameType == GameType::Undefined)
+			gameType = minecraft->isCreativeMode() ? GameType::Creative : GameType::Survival;
 
         StartGamePacket(
             level->getSeed(),

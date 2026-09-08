@@ -333,7 +333,9 @@ void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID& source, AddItemE
 {
 	if (!level) return;
 
-	ItemEntity* entity = new ItemEntity(level, packet->x, packet->y, packet->z, ItemInstance(packet->itemId, packet->itemCount, packet->auxValue));
+	ItemInstance droppedItem(packet->itemId, packet->itemCount, packet->auxValue);
+	droppedItem.setModifier(packet->modifier);
+	ItemEntity* entity = new ItemEntity(level, packet->x, packet->y, packet->z, droppedItem);
 	entity->xd = packet->xa();
 	entity->yd = packet->ya();
 	entity->zd = packet->za();

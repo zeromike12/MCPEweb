@@ -133,7 +133,8 @@ Dimension* DimensionFactory::createDefaultDimension(LevelData* data )
 	}
 
 	switch(data->getGameType()) {
-	case GameType::Survival: dimensionId = Dimension::NORMAL_DAYCYCLE;
+	case GameType::Survival:
+	case GameType::RPG: dimensionId = Dimension::NORMAL_DAYCYCLE;
 		break;
 	case GameType::Creative:
 	default:

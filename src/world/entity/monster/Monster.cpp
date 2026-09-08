@@ -90,7 +90,7 @@ bool Monster::doHurtTarget( Entity* target )
 	swing();
 	//if (target->isMob()) setLastHurtMob(target);
 	//@todo
-	int dmg = attackDamage;
+	int dmg = getScaledAttackDamage(getAttackDamage(target));
 	//if (hasEffect(MobEffect.damageBoost)) {
 	//    dmg += (3 << getEffect(MobEffect.damageBoost).getAmplifier());
 	//}

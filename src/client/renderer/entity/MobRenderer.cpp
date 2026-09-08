@@ -6,6 +6,8 @@
 #include "../../model/Model.h"
 #include "../../../world/entity/Mob.h"
 #include "../../../util/Mth.h"
+#include "../../../world/rpg/Rpg.h"
+#include "../../../world/level/Level.h"
 
 MobRenderer::MobRenderer(Model* model, float shadow)
 :	model(model),
@@ -187,10 +189,10 @@ void MobRenderer::scale(Mob* mob, float a) {
 }
 
 void MobRenderer::renderName(Mob* mob, float x, float y, float z) {
-	/*
-	std::stringstream ss; ss << mob->entityId;
-	renderNameTag(mob, ss.str(), x, y, z, 64);
-	*/
+	// RPG mode: show "Lv.N Name hp/max" above every mob
+	if (mob && !mob->isPlayer() && mob->health > 0 && Rpg::isEnabled(mob->level)) {
+		renderNameTag(mob, Rpg::mobLabel(mob), x, y + mob->bbHeight - 1.0f + 0.3f, z, 24);
+	}
 }
 
 void MobRenderer::renderNameTag(Mob* mob, const std::string& name, float x, float y, float z, int maxDist) {

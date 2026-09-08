@@ -2,6 +2,7 @@
 #include "Item.h"
 #include "../level/tile/Tile.h"
 #include "../../nbt/CompoundTag.h"
+#include "../rpg/Rpg.h"
 
 ItemInstance::ItemInstance() {
 	init(0, 0, 0);
@@ -40,12 +41,22 @@ ItemInstance::ItemInstance(const ItemInstance& rhs) {
 	this->count		= rhs.count;
 	//this->popTime	= rhs.popTime;
 	this->id		= rhs.id;
+	this->modifier	= rhs.modifier;
+}
+
+ItemInstance& ItemInstance::operator=(const ItemInstance& rhs) {
+	this->auxValue	= rhs.auxValue;
+	this->count		= rhs.count;
+	this->id		= rhs.id;
+	this->modifier	= rhs.modifier;
+	return *this;
 }
 
 void ItemInstance::init(int id, int count, int damage) {
 	this->id = id;
 	this->count = count;
 	this->auxValue = damage;
+	this->modifier = 0;
 }
 
 bool ItemInstance::isNull() const {
@@ -53,7 +64,7 @@ bool ItemInstance::isNull() const {
 }
 
 void ItemInstance::setNull() {
-	id = count = auxValue = 0;
+	id = count = auxValue = modifier = 0;
 }
 
 //ItemInstance::ItemInstance(CompoundTag itemTag) {
@@ -62,7 +73,9 @@ void ItemInstance::setNull() {
 
 ItemInstance ItemInstance::remove(int count) {
     this->count -= count;
-    return /*new*/ ItemInstance(id, count, auxValue);
+    ItemInstance result(id, count, auxValue);
+    result.modifier = modifier;
+    return result;
 }
 
 bool ItemInstance::useOn(Player* player, Level* level, int x, int y, int z, int face, float clickX, float clickY, float clickZ) {
@@ -86,7 +99,7 @@ int ItemInstance::getMaxStackSize() const {
 }
 
 bool ItemInstance::isStackable() const {
-    return getMaxStackSize() > 1 && (!isDamageableItem() || !isDamaged());
+    return getMaxStackSize() > 1 && (!isDamageableItem() || !isDamaged()) && modifier == 0;
 }
 
 bool ItemInstance::isStackable( const ItemInstance* a, const ItemInstance* b ) {
@@ -163,7 +176,9 @@ void ItemInstance::interactEnemy(Mob* mob) {
 }
 
 ItemInstance* ItemInstance::copy() const {
-    return new ItemInstance(id, count, auxValue);
+    ItemInstance* result = new ItemInstance(id, count, auxValue);
+    result->modifier = modifier;
+    return result;
 }
 
 /*static*/
@@ -190,7 +205,7 @@ bool ItemInstance::matchesNulls(const ItemInstance* a, const ItemInstance* b) {
  * @return
  */
 bool ItemInstance::sameItem(ItemInstance* b) {
-    return id == b->id && auxValue == b->auxValue;
+    return id == b->id && auxValue == b->auxValue && modifier == b->modifier;
 }
 
 std::string ItemInstance::getDescriptionId() const {
@@ -202,7 +217,11 @@ ItemInstance* ItemInstance::setDescriptionId(const std::string& id) {
 }
 
 std::string ItemInstance::getName() const {
-	return I18n::get(getDescriptionId() + ".name");
+	std::string name = I18n::get(getDescriptionId() + ".name");
+	if (modifier != 0) {
+		name = Rpg::modifierColorCode(modifier) + Rpg::modifierPrefix(modifier) + " " + name + "\xa7" "f";
+	}
+	return name;
 }
 
 std::string ItemInstance::toString() const {
@@ -225,13 +244,15 @@ ItemInstance ItemInstance::cloneSafe( const ItemInstance* item ) {
 bool ItemInstance::matches(const ItemInstance* b) const {
     return (id == b->id)
 		&& (count == b->count)
-		&& (auxValue == b->auxValue);
+		&& (auxValue == b->auxValue)
+		&& (modifier == b->modifier);
 }
 
 CompoundTag* ItemInstance::save(CompoundTag* compoundTag) {
     compoundTag->putShort("id", (short) id);
     compoundTag->putByte("Count", (unsigned char) count);
     compoundTag->putShort("Damage", (short) auxValue);
+    if (modifier != 0) compoundTag->putShort("RpgMod", (short) modifier);
     return compoundTag;
 }
 
@@ -239,12 +260,14 @@ void ItemInstance::load(CompoundTag* compoundTag) {
     id = compoundTag->getShort("id");
     count = (unsigned char) compoundTag->getByte("Count");
     auxValue = compoundTag->getShort("Damage");
+    modifier = compoundTag->getShort("RpgMod");
 }
 
 bool ItemInstance::operator==( const ItemInstance& rhs ) const {
 	return id		== rhs.id
 		&& auxValue == rhs.auxValue
-		&& count    == rhs.count;
+		&& count    == rhs.count
+		&& modifier == rhs.modifier;
 }
 
 ItemInstance* ItemInstance::fromTag( CompoundTag* tag ) {

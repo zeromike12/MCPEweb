@@ -103,6 +103,14 @@ public:
 	int getMaxHealth();
 	bool isHurt();
 
+	// --- RPG mode ---
+	int  getRpgPlayerLevel() const { return rpgPlayerLevel; }
+	int  getRpgXp() const { return rpgXp; }
+	int  getRpgXpToNext() const;
+	/// Adds XP, levelling up as needed. Returns the number of levels gained.
+	int  addRpgXp(int amount);
+	void setRpgPlayerLevel(int level);
+
 	bool hurt(Entity* source, int dmg);
 	void hurtArmor(int dmg);
 	void setArmor(int slot, const ItemInstance* item);
@@ -177,6 +185,10 @@ public:
 
 	Abilities abilities;
 	SimpleFoodData foodData;
+
+	/// RPG mode progression (persisted in the player NBT as RpgLevel / RpgXp).
+	int rpgPlayerLevel;
+	int rpgXp;
     //Stats stats;
 
 	BaseContainerMenu* containerMenu;

@@ -80,7 +80,19 @@ public:
     virtual void superTick();
 
     virtual void heal(int heal);
+    /// Base (unscaled) max health of this mob type.
     virtual int  getMaxHealth() { return 10; }
+
+	// --- RPG mode ---
+	/// Mob level (1 = normal). Synced to clients through the entity data.
+	int  getRpgLevel() const;
+	void setRpgLevel(int level);
+	/// Max health after RPG level scaling (equals getMaxHealth() outside RPG mode).
+	int  getScaledMaxHealth();
+	/// Damage after RPG level scaling (equals dmg outside RPG mode).
+	int  getScaledAttackDamage(int dmg);
+	/// Picks a level for a freshly spawned mob (no-op outside RPG mode / on clients).
+	void initRpgLevel();
 	virtual bool hurt(Entity* source, int dmg);
     virtual void actuallyHurt(int dmg);
     virtual void animateHurt();
@@ -174,6 +186,8 @@ public:
 
 	int health;
 	int lastHealth;
+	static const int DATA_RPG_LEVEL_ID = 15;
+	bool rpgLevelAssigned;
 
 	int hurtTime;
 	int hurtDuration;

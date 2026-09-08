@@ -10,6 +10,7 @@
 #include "../tile/FireTile.h"
 #include "../../entity/EntityTypes.h"
 #include "../../entity/MobCategory.h"
+#include "../../rpg/Rpg.h"
 
 static const int MAX_BUFFER_SIZE = 1024;
 
@@ -341,6 +342,10 @@ void NetherRandomLevelSource::postProcess(ChunkSource* parent, int xt, int zt) {
 			}
 		}
 	}
+
+	// RPG mode: loot chests are rarer but better in the Nether
+	if (!level->isClientSide && Rpg::isEnabled(level) && random.nextInt(2) == 0)
+		Rpg::placeLootChest(level, xo, zo, &random);
 }
 
 bool NetherRandomLevelSource::tick() {

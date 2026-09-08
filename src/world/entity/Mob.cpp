@@ -22,6 +22,8 @@
 #include "ai/goal/GoalSelector.h"
 #include "../../network/packet/SetEntityMotionPacket.h"
 #include "../item/ArmorItem.h"
+#include "../rpg/Rpg.h"
+#include "projectile/Arrow.h"
 
 
 Mob::Mob(Level* level)
@@ -65,10 +67,12 @@ Mob::Mob(Level* level)
 	swingTime(0),
 	lastHurt(0),
 	dmgSpill(0),
-	bypassArmor(false)
+	bypassArmor(false),
+	rpgLevelAssigned(false)
 {
 	entityData.define(SharedFlagsInformation::DATA_SHARED_FLAGS_ID, (SynchedEntityData::TypeChar) 0);
 	entityData.define(DATA_AIR_SUPPLY_ID, (SynchedEntityData::TypeShort) TOTAL_AIR_SUPPLY);
+	entityData.define(DATA_RPG_LEVEL_ID, (SynchedEntityData::TypeShort) 1);
 
 	_init();
 	health = getMaxHealth();
@@ -379,7 +383,9 @@ void Mob::heal( int heal )
 {
 	if (health <= 0) return;
 	health += heal;
-	if (health > 20) health = 20;
+	int max = getScaledMaxHealth();
+	if (max < 20 && !Rpg::isEnabled(level)) max = 20;
+	if (health > max) health = max;
 	invulnerableTime = invulnerableDuration / 2;
 }
 
@@ -482,6 +488,18 @@ void Mob::knockback( Entity* source, int dmg, float xd, float zd )
 void Mob::die( Entity* source )
 {
 	if (deathScore > 0 && source != NULL) source->awardKillScore(this, deathScore);
+
+	// RPG mode: the killer (or the owner of the killing arrow) gains XP
+	if (Rpg::isEnabled(level) && !level->isClientSide && source != NULL && !isPlayer()) {
+		Entity* killer = source;
+		if (source->getEntityTypeId() == EntityTypes::IdArrow) {
+			killer = level->getEntity(((Arrow*) source)->ownerId);
+		}
+		// awardKillScore above already handled the (killer == source && deathScore > 0) case
+		if (killer != NULL && killer->isPlayer() && !(killer == source && deathScore > 0)) {
+			killer->awardKillScore(this, 0);
+		}
+	}
 
 	if (!level->isClientSide) {
 		if (!isBaby()) {
@@ -645,6 +663,7 @@ bool Mob::isShootable()
 void Mob::addAdditonalSaveData( CompoundTag* entityTag )
 {
 	entityTag->putShort("Health", (short) health);
+	entityTag->putShort("RpgLevel", (short) getRpgLevel());
 	entityTag->putShort("HurtTime", (short) hurtTime);
 	entityTag->putShort("DeathTime", (short) deathTime);
 	entityTag->putShort("AttackTime", (short) attackTime);
@@ -655,11 +674,46 @@ void Mob::addAdditonalSaveData( CompoundTag* entityTag )
 void Mob::readAdditionalSaveData( CompoundTag* tag )
 {
 	health = tag->getShort("Health");
+	int rpgLevel = tag->getShort("RpgLevel");
+	if (rpgLevel > 0) setRpgLevel(rpgLevel);
 	hurtTime = tag->getShort("HurtTime");
 	deathTime = tag->getShort("DeathTime");
 	attackTime = tag->getShort("AttackTime");
 
 	//if (isPlayer()) LOGI("Reading %d, %d, %d, %d\n", health, hurtTime, deathTime, attackTime);
+}
+
+// --- RPG mode -------------------------------------------------------
+
+int Mob::getRpgLevel() const {
+	int lvl = entityData.getShort(DATA_RPG_LEVEL_ID);
+	return lvl < 1 ? 1 : lvl;
+}
+
+void Mob::setRpgLevel(int lvl) {
+	if (lvl < 1) lvl = 1;
+	if (lvl > Rpg::MAX_MOB_LEVEL) lvl = Rpg::MAX_MOB_LEVEL;
+	entityData.set(DATA_RPG_LEVEL_ID, (SynchedEntityData::TypeShort) lvl);
+	rpgLevelAssigned = true;
+}
+
+int Mob::getScaledMaxHealth() {
+	int base = getMaxHealth();
+	if (!Rpg::isEnabled(level) || isPlayer()) return base;
+	return Rpg::mobMaxHealth(base, getRpgLevel());
+}
+
+int Mob::getScaledAttackDamage(int dmg) {
+	if (!Rpg::isEnabled(level) || isPlayer()) return dmg;
+	return Rpg::mobDamage(dmg, getRpgLevel());
+}
+
+void Mob::initRpgLevel() {
+	if (rpgLevelAssigned) return;
+	if (isPlayer() || !level || level->isClientSide || !Rpg::isEnabled(level)) return;
+	int lvl = Rpg::rollMobLevel(level, x, z, &level->random);
+	setRpgLevel(lvl);
+	health = getScaledMaxHealth();
 }
 
 void Mob::animateHurt()
