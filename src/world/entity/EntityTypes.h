@@ -51,6 +51,12 @@ public:
 	static const int Skeleton	= 34;
 	static const int Spider		= 35;
 	static const int PigZombie	= 36;
+
+	// Aether
+	static const int Moa        = 14;
+	static const int Sentry     = 37;
+	static const int Mimic      = 38;
+	static const int AetherBoss = 39;
 };
 
 struct ParticleType {

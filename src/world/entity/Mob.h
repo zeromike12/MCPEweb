@@ -74,13 +74,29 @@ public:
 	float	getSpeed();
 	void	setSpeed(float speed);
 	void	setJumping(bool jump);
+	// Movement intent accessors (used by rideable mobs to read their rider's controls)
+	float	getXxa() const { return xxa; }
+	float	getYya() const { return yya; }
+	bool	isJumping() const { return jumping; }
 
 	virtual void tick();
 	virtual void baseTick();
     virtual void superTick();
 
     virtual void heal(int heal);
+    /// Base (unscaled) max health of this mob type.
     virtual int  getMaxHealth() { return 10; }
+
+	// --- RPG mode ---
+	/// Mob level (1 = normal). Synced to clients through the entity data.
+	int  getRpgLevel() const;
+	void setRpgLevel(int level);
+	/// Max health after RPG level scaling (equals getMaxHealth() outside RPG mode).
+	int  getScaledMaxHealth();
+	/// Damage after RPG level scaling (equals dmg outside RPG mode).
+	int  getScaledAttackDamage(int dmg);
+	/// Picks a level for a freshly spawned mob (no-op outside RPG mode / on clients).
+	void initRpgLevel();
 	virtual bool hurt(Entity* source, int dmg);
     virtual void actuallyHurt(int dmg);
     virtual void animateHurt();
@@ -174,6 +190,13 @@ public:
 
 	int health;
 	int lastHealth;
+	static const int DATA_RPG_LEVEL_ID = 15;
+	bool rpgLevelAssigned;
+	/// Persistent mobs (dungeon guards) never despawn. Saved as "Persistent".
+	bool persistent;
+	/// RPG weapon status effects (ticks remaining)
+	int frozenTicks;
+	int poisonTicks;
 
 	int hurtTime;
 	int hurtDuration;

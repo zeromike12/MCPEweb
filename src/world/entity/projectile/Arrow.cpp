@@ -6,6 +6,8 @@
 #include "../../level/Level.h"
 #include "../../level/tile/Tile.h"
 #include "../../../util/Mth.h"
+#include "../../rpg/Rpg.h"
+#include <cmath>
 
 #include "../../../nbt/CompoundTag.h"
 
@@ -198,6 +200,21 @@ void Arrow::tick()
 		if (res.type == ENTITY) {
 			float pow = Mth::sqrt(xd * xd + yd * yd + zd * zd);
 			int dmg = (int) std::ceil(pow * ARROW_BASE_DAMAGE);
+			if (Entity* shooter = level->getEntity(ownerId)) {
+				if (shooter->isPlayer()) {
+					if (Rpg::isEnabled(level)) {
+						Player* p = (Player*) shooter;
+						ItemInstance* bow = p->getCarriedItem();
+						bool hostile = res.entity->getCreatureBaseType() == MobTypes::BaseEnemy;
+						if (bow != NULL && bow->hasModifier())
+							dmg += Rpg::weaponBonusDamage(bow->getModifier(), dmg, hostile);
+						dmg = (int) std::floor(dmg * Rpg::playerDamageMultiplier(p->getRpgPlayerLevel()) + 0.5f);
+						if (dmg < 1) dmg = 1;
+					}
+				} else if (shooter->isMob()) {
+					dmg = ((Mob*) shooter)->getScaledAttackDamage(dmg);
+				}
+			}
 
 			if (critArrow) dmg += sharedRandom.nextInt(dmg / 2 + 2);
 
@@ -215,6 +232,11 @@ void Arrow::tick()
 			if (res.entity->hurt(this, dmg)) {
 				if (res.entity->isMob()) {
 					((Mob*) res.entity)->arrowCount++;
+				}
+				if (Rpg::isEnabled(level)) {
+					Entity* shooter = level->getEntity(ownerId);
+					if (shooter && shooter->isPlayer())
+						Rpg::applyWeaponOnHit((Player*) shooter, res.entity, ((Player*) shooter)->getCarriedItem(), dmg);
 				}
 				level->playSound(this, "random.bowhit", 1.0f, 1.2f / (sharedRandom.nextFloat() * 0.2f + 0.9f));
 				remove();

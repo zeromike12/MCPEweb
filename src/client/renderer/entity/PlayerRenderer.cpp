@@ -4,12 +4,18 @@
 #include "../../../world/level/Level.h"
 #include "../../../world/item/ArmorItem.h"
 
-static const std::string armorFilenames[10] = {
+static const std::string armorFilenames[20] = {
 	"armor/cloth_1.png",	"armor/cloth_2.png",
 	"armor/chain_1.png",	"armor/chain_2.png",
 	"armor/iron_1.png",		"armor/iron_2.png",
 	"armor/diamond_1.png",	"armor/diamond_2.png",
 	"armor/gold_1.png",		"armor/gold_2.png",
+	// RPG mythic sets (RpgArmorItem modelIndex 5..9)
+	"armor/dragonscale_1.png",	"armor/dragonscale_2.png",
+	"armor/shadowweave_1.png",	"armor/shadowweave_2.png",
+	"armor/titanforged_1.png",	"armor/titanforged_2.png",
+	"armor/lifebloom_1.png",	"armor/lifebloom_2.png",
+	"armor/stormcaller_1.png",	"armor/stormcaller_2.png",
 };
 
 PlayerRenderer::PlayerRenderer( HumanoidModel* humanoidModel, float shadow )
@@ -59,6 +65,7 @@ int PlayerRenderer::prepareArmor(Mob* mob, int layer, float a) {
 
 	ArmorItem* armorItem = (ArmorItem*) itemInstance->getItem();
 	int fnIndex = (armorItem->modelIndex + armorItem->modelIndex) + (layer == 2 ? 1 : 0);
+	if (fnIndex < 0 || fnIndex >= 20) fnIndex = 6 + (layer == 2 ? 1 : 0);
 	bindTexture(armorFilenames[fnIndex]);
 
 	HumanoidModel* armor = layer == 2 ? armorParts2 : armorParts1;

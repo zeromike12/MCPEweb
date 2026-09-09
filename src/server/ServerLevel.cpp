@@ -33,12 +33,15 @@ void ServerLevel::awakenAllPlayers() {
 		Player* player = *it;
 		if(player->isSleeping()) {
 			player->stopSleepInBed(false, false, true);
-			player->health = Player::MAX_HEALTH;
-			player->lastHealth = Player::MAX_HEALTH; 
+			player->health = player->getMaxHealth();
+			player->lastHealth = player->getMaxHealth(); 
 		}
 	}
-	SetHealthPacket packet(Player::MAX_HEALTH);
-	raknetInstance->send(packet);
+	for(PlayerList::iterator it = players.begin(); it != players.end(); ++it) {
+		Player* player = *it;
+		SetHealthPacket packet(player->getMaxHealth());
+		if (player->owner != RakNet::UNASSIGNED_RAKNET_GUID) raknetInstance->send(player->owner, packet);
+	}
 }
 
 bool ServerLevel::allPlayersSleeping() {

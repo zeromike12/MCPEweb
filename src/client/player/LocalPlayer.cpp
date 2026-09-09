@@ -1,4 +1,5 @@
 #include "LocalPlayer.h"
+#include "../../world/rpg/Rpg.h"
 #include "../Minecraft.h"
 #include "../../ErrorCodes.h"
 #include "../../world/entity/EntityEvent.h"
@@ -97,6 +98,21 @@ void LocalPlayer::tick() {
 
 	super::tick();
 
+	// Falling off an Aether island drops you back into the overworld sky
+	// instead of into the void (classic Aether behaviour).
+	if (level && level->dimension && level->dimension->id == Dimension::AETHER && y < -2.0f && isAlive() && portalCooldown <= 0) {
+		portalCooldown = 100;
+		float fx = x, fz = z;
+		minecraft->switchDimension(Dimension::NORMAL, false);
+		if (level && level->dimension && level->dimension->id != Dimension::AETHER) {
+			level->getChunkAt(Mth::floor(fx), Mth::floor(fz));
+			moveTo(fx, (float)Level::DEPTH - 2.0f, fz, yRot, xRot);
+			xd = zd = 0; yd = -0.2f;
+			fallDistance = 0;
+			if (!abilities.flying && !abilities.instabuild) displayClientMessage("You fell out of the Aether!");
+		}
+	}
+
 	oPortalTime = portalTime;
 	if (inPortal) {
 		if (portalCooldown > 0) {
@@ -108,7 +124,10 @@ void LocalPlayer::tick() {
 			if (portalCounter >= maxPortalTime) {
 				portalCounter = 0;
 				portalCooldown = 100;
-				int targetDim = (dimension == Dimension::NETHER ? Dimension::NORMAL : Dimension::NETHER);
+				int targetDim;
+				int curDim = (level && level->dimension) ? level->dimension->id : dimension;
+				if (curDim == Dimension::NETHER || curDim == Dimension::AETHER) targetDim = Dimension::NORMAL;
+				else targetDim = (inPortalDim == Dimension::AETHER) ? Dimension::AETHER : Dimension::NETHER;
 				minecraft->switchDimension(targetDim);
 			}
 		}
@@ -513,6 +532,7 @@ void LocalPlayer::drop( ItemInstance* item, bool randomly )
 
 void LocalPlayer::causeFallDamage( float distance )
 {
+	if (Rpg::isEnabled(level) && Rpg::setNoFallDamage(this)) return;
 	int dmg = (int) ceil((distance - 3));
 	if (dmg > 0) {
 		if (level->isClientSide) {

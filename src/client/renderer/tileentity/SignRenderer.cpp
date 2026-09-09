@@ -1,6 +1,7 @@
 #include "SignRenderer.h"
 #include "../../../world/level/tile/Tile.h"
 #include "../../../world/level/tile/entity/SignTileEntity.h"
+#include "../../../world/aether/Aether.h"
 
 void SignRenderer::render( TileEntity* te, float x, float y, float z, float a )
 {
@@ -9,7 +10,7 @@ void SignRenderer::render( TileEntity* te, float x, float y, float z, float a )
 
     glPushMatrix();
     float size = 16 / 24.0f;
-    if (tile == Tile::sign) {
+    if (tile == Tile::sign || tile == Aether::aetherSign) {
         glTranslatef(x + 0.5f, y + 0.75f * size, z + 0.5f);
         float rot = sign->getData() * 360 / 16.0f;
         glRotatef(-rot, 0, 1, 0);

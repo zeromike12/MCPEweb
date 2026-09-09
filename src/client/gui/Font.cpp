@@ -338,8 +338,22 @@ void Font::drawSlow( const char* str, float x, float y, int color, bool darken /
 	float xOffset = 0;
 	float yOffset = 0;
 
+	static const std::string hex("0123456789abcdef");
+
 	while (unsigned char ch = *(str++)) {
-		if (ch == '\n') {
+		if (ch == 0xA7 && *str) {
+			// Colour code: \xa7 followed by a hex digit (classic Minecraft palette)
+			int cc = (int) hex.find((char) tolower(*str));
+			str++;
+			if (cc < 0 || cc > 15) cc = 15;
+			int br = (cc >> 3 & 1) * 85;
+			int r = (cc >> 2 & 1) * 170 + br;
+			int g = (cc >> 1 & 1) * 170 + br;
+			int b = (cc & 1) * 170 + br;
+			if (cc == 6) r += 85;
+			if (darken) { r >>= 2; g >>= 2; b >>= 2; }
+			t.color(r, g, b, alpha);
+		} else if (ch == '\n') {
 			xOffset = 0;
 			yOffset += lineHeight;
 		} else {

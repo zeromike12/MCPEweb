@@ -172,7 +172,20 @@
             }
         }
     </script>
-    {{{ SCRIPT }}}
+    <!-- emcc requires this placeholder; its output is neutralised inside the
+         comment because we load index.js ourselves below with a cache-buster. -->
+    <!-- {{{ SCRIPT }}} -->
+    <script type='text/javascript'>
+        // Load the runtime JS with the same cache-buster as the .wasm/.data so a
+        // stale index.js can never be paired with a fresh index.wasm (that
+        // combination fails with "No EM_ASM constant found ... out of sync").
+        (function () {
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'index.js?v=' + BUILD_VERSION;
+            document.body.appendChild(s);
+        })();
+    </script>
 </body>
 
 </html>

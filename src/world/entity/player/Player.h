@@ -68,6 +68,8 @@ public:
     void resetPos(bool clearMore);
     Pos getRespawnPosition();
     void setRespawnPosition(const Pos& respawnPosition);
+	int  getRespawnDimension() const { return respawnDimension; }
+	void setRespawnDimension(int dim) { respawnDimension = dim; }
     
     bool isShootable();
     bool isCreativeModeAllowed();
@@ -102,6 +104,14 @@ public:
 
 	int getMaxHealth();
 	bool isHurt();
+
+	// --- RPG mode ---
+	int  getRpgPlayerLevel() const { return rpgPlayerLevel; }
+	int  getRpgXp() const { return rpgXp; }
+	int  getRpgXpToNext() const;
+	/// Adds XP, levelling up as needed. Returns the number of levels gained.
+	int  addRpgXp(int amount);
+	void setRpgPlayerLevel(int level);
 
 	bool hurt(Entity* source, int dmg);
 	void hurtArmor(int dmg);
@@ -145,6 +155,8 @@ public:
     int getArmorValue();
 protected:
 	bool isImmobile();
+	void knockback(Entity* source, int dmg, float xd, float zd);
+	void causeFallDamage(float distance);
 	void updateAi();
 	virtual void closeContainer();
 	void setDefaultHeadHeight();
@@ -177,6 +189,10 @@ public:
 
 	Abilities abilities;
 	SimpleFoodData foodData;
+
+	/// RPG mode progression (persisted in the player NBT as RpgLevel / RpgXp).
+	int rpgPlayerLevel;
+	int rpgXp;
     //Stats stats;
 
 	BaseContainerMenu* containerMenu;
@@ -196,6 +212,7 @@ protected:
 	static const int NUM_ARMOR = 4;
 private:
     Pos respawnPosition;
+	int respawnDimension; // dimension the respawn position (bed) lives in
 	bool playerHasRespawnPosition;
 	bool playerIsSleeping;
 	bool allPlayersSleeping;

@@ -27,6 +27,7 @@ public:
     ItemInstance(const Item* item, int count, int auxValue);
     ItemInstance(int id, int count, int damage);
 	ItemInstance(const ItemInstance& rhs);
+	ItemInstance& operator=(const ItemInstance& rhs);
 
 	void init(int id, int count, int damage);
 	bool isNull() const;
@@ -92,6 +93,11 @@ public:
 
     std::string getDescriptionId() const;
 	std::string getName() const;
+
+	/// RPG-mode equipment modifier (0 = none). See Rpg.h for the encoding.
+	int getModifier() const { return modifier; }
+	void setModifier(int value) { modifier = value; }
+	bool hasModifier() const { return modifier != 0; }
     ItemInstance* setDescriptionId(const std::string& id);
 	std::string toString() const;
 
@@ -112,6 +118,10 @@ private:
      * is interpreted correctly.
      */
 	int auxValue;
+
+	/// RPG equipment modifier. Not part of the item identity for stacking
+	/// purposes of stackable items (modified items are never stackable).
+	int modifier;
 };
 
 #endif /*NET_MINECRAFT_WORLD_ITEM__ItemInstance_H__*/

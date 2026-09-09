@@ -18,6 +18,7 @@ if clean_build:
         except OSError:
             pass
 
+os.environ.setdefault("EM_CONFIG", "/home/user/emscripten/.emscripten")
 EMCC = "/home/user/emscripten/emcc"
 EMPP = "/home/user/emscripten/em++"
 
@@ -48,6 +49,7 @@ LINK_FLAGS = [
     "-sALLOW_MEMORY_GROWTH=1",
     "-sMAX_WEBGL_VERSION=2",
     "-sEXIT_RUNTIME=0",
+    "-sWASM_BIGINT",
     "-sSTACK_OVERFLOW_CHECK=0",
     "-sASSERTIONS=1",
     "-sEXPORTED_FUNCTIONS=['_main','_syncSaves','_malloc','_free']",

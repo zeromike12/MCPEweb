@@ -22,6 +22,8 @@
 #include "ai/goal/GoalSelector.h"
 #include "../../network/packet/SetEntityMotionPacket.h"
 #include "../item/ArmorItem.h"
+#include "../rpg/Rpg.h"
+#include "projectile/Arrow.h"
 
 
 Mob::Mob(Level* level)
@@ -65,10 +67,15 @@ Mob::Mob(Level* level)
 	swingTime(0),
 	lastHurt(0),
 	dmgSpill(0),
-	bypassArmor(false)
+	bypassArmor(false),
+	rpgLevelAssigned(false),
+	persistent(false),
+	frozenTicks(0),
+	poisonTicks(0)
 {
 	entityData.define(SharedFlagsInformation::DATA_SHARED_FLAGS_ID, (SynchedEntityData::TypeChar) 0);
 	entityData.define(DATA_AIR_SUPPLY_ID, (SynchedEntityData::TypeShort) TOTAL_AIR_SUPPLY);
+	entityData.define(DATA_RPG_LEVEL_ID, (SynchedEntityData::TypeShort) 1);
 
 	_init();
 	health = getMaxHealth();
@@ -154,6 +161,25 @@ void Mob::baseTick()
 
 	if (isAlive() && isInWall()) {
 		hurt(NULL, 1);
+	}
+
+	// RPG weapon status effects
+	if (!level->isClientSide) {
+		if (frozenTicks > 0) {
+			frozenTicks--;
+			xd = 0; zd = 0;
+			if ((frozenTicks & 3) == 0)
+				level->addParticle(PARTICLETYPE(bubble), x + (random.nextFloat() - 0.5f) * bbWidth, bb.y0 + random.nextFloat() * bbHeight, z + (random.nextFloat() - 0.5f) * bbWidth, 0, 0, 0);
+		}
+		if (poisonTicks > 0) {
+			poisonTicks--;
+			if (poisonTicks % 25 == 0 && health > 1) {
+				int before = invulnerableTime;
+				invulnerableTime = 0;
+				hurt(NULL, 1);
+				if (invulnerableTime > before) invulnerableTime = before;
+			}
+		}
 	}
 
 	//if (fireImmune || level.isOnline) onFire = 0;
@@ -379,7 +405,9 @@ void Mob::heal( int heal )
 {
 	if (health <= 0) return;
 	health += heal;
-	if (health > 20) health = 20;
+	int max = getScaledMaxHealth();
+	if (max < 20 && !Rpg::isEnabled(level)) max = 20;
+	if (health > max) health = max;
 	invulnerableTime = invulnerableDuration / 2;
 }
 
@@ -483,9 +511,27 @@ void Mob::die( Entity* source )
 {
 	if (deathScore > 0 && source != NULL) source->awardKillScore(this, deathScore);
 
+	// RPG mode: the killer (or the owner of the killing arrow) gains XP
+	if (Rpg::isEnabled(level) && !level->isClientSide && source != NULL && !isPlayer()) {
+		Entity* killer = source;
+		if (source->getEntityTypeId() == EntityTypes::IdArrow) {
+			killer = level->getEntity(((Arrow*) source)->ownerId);
+		}
+		// awardKillScore above already handled the (killer == source && deathScore > 0) case
+		if (killer != NULL && killer->isPlayer() && !(killer == source && deathScore > 0)) {
+			killer->awardKillScore(this, 0);
+		}
+	}
+
 	if (!level->isClientSide) {
 		if (!isBaby()) {
 			dropDeathLoot();
+		}
+		// RPG mode: elite dungeon guards (persistent, level 15+) very rarely drop mythic gear
+		if (Rpg::isEnabled(level) && persistent && !isPlayer() && getRpgLevel() >= 15 && source != NULL
+			&& getCreatureBaseType() == MobTypes::BaseEnemy && random.nextInt(25) == 0) {
+			Item* mythic = Rpg::rollMythicItem(&random);
+			if (mythic) spawnAtLocation(new ItemInstance(mythic, 1, 0), 0.0f);
 		}
 		level->broadcastEntityEvent(this, EntityEvent::DEATH);
 	}
@@ -645,6 +691,8 @@ bool Mob::isShootable()
 void Mob::addAdditonalSaveData( CompoundTag* entityTag )
 {
 	entityTag->putShort("Health", (short) health);
+	entityTag->putShort("RpgLevel", (short) getRpgLevel());
+	if (persistent) entityTag->putBoolean("Persistent", true);
 	entityTag->putShort("HurtTime", (short) hurtTime);
 	entityTag->putShort("DeathTime", (short) deathTime);
 	entityTag->putShort("AttackTime", (short) attackTime);
@@ -655,11 +703,47 @@ void Mob::addAdditonalSaveData( CompoundTag* entityTag )
 void Mob::readAdditionalSaveData( CompoundTag* tag )
 {
 	health = tag->getShort("Health");
+	int rpgLevel = tag->getShort("RpgLevel");
+	if (rpgLevel > 0) setRpgLevel(rpgLevel);
+	persistent = tag->getBoolean("Persistent");
 	hurtTime = tag->getShort("HurtTime");
 	deathTime = tag->getShort("DeathTime");
 	attackTime = tag->getShort("AttackTime");
 
 	//if (isPlayer()) LOGI("Reading %d, %d, %d, %d\n", health, hurtTime, deathTime, attackTime);
+}
+
+// --- RPG mode -------------------------------------------------------
+
+int Mob::getRpgLevel() const {
+	int lvl = entityData.getShort(DATA_RPG_LEVEL_ID);
+	return lvl < 1 ? 1 : lvl;
+}
+
+void Mob::setRpgLevel(int lvl) {
+	if (lvl < 1) lvl = 1;
+	if (lvl > Rpg::MAX_MOB_LEVEL) lvl = Rpg::MAX_MOB_LEVEL;
+	entityData.set(DATA_RPG_LEVEL_ID, (SynchedEntityData::TypeShort) lvl);
+	rpgLevelAssigned = true;
+}
+
+int Mob::getScaledMaxHealth() {
+	int base = getMaxHealth();
+	if (!Rpg::isEnabled(level) || isPlayer()) return base;
+	return Rpg::mobMaxHealth(base, getRpgLevel());
+}
+
+int Mob::getScaledAttackDamage(int dmg) {
+	if (!Rpg::isEnabled(level) || isPlayer()) return dmg;
+	return Rpg::mobDamage(dmg, getRpgLevel());
+}
+
+void Mob::initRpgLevel() {
+	if (rpgLevelAssigned) return;
+	if (isPlayer() || !level || level->isClientSide || !Rpg::isEnabled(level)) return;
+	int lvl = Rpg::rollMobLevel(level, x, z, &level->random);
+	setRpgLevel(lvl);
+	health = getScaledMaxHealth();
 }
 
 void Mob::animateHurt()
@@ -831,7 +915,7 @@ void Mob::newServerAiStep() {
 
 bool Mob::isImmobile()
 {
-	return health <= 0;
+	return health <= 0 || frozenTicks > 0;
 }
 
 void Mob::jumpFromGround()
@@ -1040,6 +1124,10 @@ void Mob::checkDespawn() {
 }
 
 void Mob::checkDespawn(Mob* nearestBlocking) {
+	if (persistent) {
+		noActionTime = 0;
+		return;
+	}
 	if (nearestBlocking != NULL) {
 		const bool removeIfFar = removeWhenFarAway();
 		float xd = nearestBlocking->x - x;

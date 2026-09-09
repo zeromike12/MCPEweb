@@ -15,7 +15,7 @@ int Skeleton::getMaxHealth() {
 }
 
 void Skeleton::aiStep() {
-	if ((++fireCheckTick & 1) && level->isDay() && !level->isClientSide) {
+	if ((++fireCheckTick & 1) && level->isDay() && !level->isClientSide && !persistent) { // dungeon guards don't burn
 		float br = getBrightness(1);
 		if (br > 0.5f) {
 			if (level->canSeeSky(Mth::floor(x), Mth::floor(y), Mth::floor(z)) && random.nextFloat() * 3.5f < (br - 0.4f)) {

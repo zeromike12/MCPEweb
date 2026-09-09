@@ -1008,6 +1008,7 @@ bool Level::addEntity(Entity* e) {
 		getChunk(xc, zc)->addEntity(e);
 		entities.push_back(e);
 		entityIdLookup[e->entityId] = e;
+		if (e->isMob() && !e->isPlayer()) ((Mob*) e)->initRpgLevel();
 		entityAdded(e);
 		return true;
 	}

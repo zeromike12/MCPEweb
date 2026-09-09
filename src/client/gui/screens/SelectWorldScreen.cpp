@@ -340,11 +340,12 @@ void SelectWorldScreen::tick()
 					}
 					// Read the game mode
 					bool isCreative = true;
-					if (sv.size() >= 3 && sv[2] == "survival")
+					if (sv.size() >= 3 && (sv[2] == "survival" || sv[2] == "rpg"))
 						isCreative = false;
 
 					// Start a new level with the given name and seed
-					LevelSettings settings(seed, isCreative? GameType::Creative : GameType::Survival);
+					int gameType = isCreative ? GameType::Creative : (sv[2] == "rpg" ? GameType::RPG : GameType::Survival);
+					LevelSettings settings(seed, gameType);
 					LOGI("Creating a level with id '%s', name '%s' and seed '%d'\n", levelId.c_str(), levelName.c_str(), seed);
 					minecraft->selectLevel(levelId, levelName, settings);
 					minecraft->hostMultiplayer();

@@ -11,6 +11,7 @@
 #include "../tile/Tile.h"
 #include "../tile/HeavyTile.h"
 #include "../../../util/Random.h"
+#include "../../rpg/Rpg.h"
 
 const float RandomLevelSource::SNOW_CUTOFF = 0.5f;
 const float RandomLevelSource::SNOW_SCALE = 0.3f;
@@ -454,6 +455,10 @@ void RandomLevelSource::postProcess(ChunkSource* parent, int xt, int zt) {
 
 	if (spawnMobs && !level->isClientSide)
 		MobSpawner::postProcessSpawnMobs(level, biome, xo + 8, zo + 8, 16, 16, &random);
+
+	// RPG mode: occasional loot chests with modified gear
+	if (!level->isClientSide && Rpg::isEnabled(level))
+		Rpg::placeLootChest(level, xo, zo, &random);
 
 	//LOGI("Reading temp: 1\n");
     float* temperatures = level->getBiomeSource()->getTemperatureBlock(/*NULL,*/ xo + 8, zo + 8, 16, 16);

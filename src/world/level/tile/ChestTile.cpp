@@ -255,7 +255,9 @@ void ChestTile::onRemove( Level* level, int x, int y, int z )
 						int count = random.nextInt(21) + 10;
 						if (count > item->count) count = item->count;
 						item->count -= count;
-						ItemEntity* itemEntity = new ItemEntity(level, x + xo, y + yo, z + zo, ItemInstance(item->id, count, item->getAuxValue()));
+						ItemInstance dropped(item->id, count, item->getAuxValue());
+						dropped.setModifier(item->getModifier());
+						ItemEntity* itemEntity = new ItemEntity(level, x + xo, y + yo, z + zo, dropped);
 						float pow = 0.05f;
 						itemEntity->xd = (float) random.nextGaussian() * pow;
 						itemEntity->yd = (float) random.nextGaussian() * pow + 0.2f;

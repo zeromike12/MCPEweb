@@ -28,6 +28,7 @@ mergeInto(LibraryManager.library, {
             'margin-top:5px;background:#222;color:#fff;border:1px solid #666;font-size:14px;font-family:monospace">' +
             '<option value="creative">Creative</option>' +
             '<option value="survival">Survival</option>' +
+            '<option value="rpg">RPG</option>' +
             '</select>' +
             '</div>' +
             '<div style="display:flex;gap:10px;justify-content:center">' +

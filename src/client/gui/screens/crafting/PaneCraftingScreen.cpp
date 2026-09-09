@@ -16,6 +16,7 @@
 #include "../../../../world/level/Level.h"
 #include "../../../../world/item/DyePowderItem.h"
 #include "../../../../world/item/crafting/Recipe.h"
+#include "../../../../world/rpg/Rpg.h"
 
 static NinePatchLayer* guiPaneFrame = NULL;
 
@@ -458,6 +459,15 @@ void PaneCraftingScreen::craftSelectedItem()
                 minecraft->player->inventory->removeResource(toRemove);
             }
 		}
+		// RPG mode: every crafted weapon / armor piece rolls an equipment modifier
+		if (Rpg::isEnabled(minecraft->level)) {
+			int modifier = Rpg::rollCraftedModifier(resultItem, &minecraft->level->random);
+			if (modifier != 0) {
+				resultItem.setModifier(modifier);
+				minecraft->player->displayClientMessage(resultItem.getName() + " \xa7" "7- " + Rpg::describeModifier(modifier));
+			}
+		}
+
 		// ... add the new one! (in this order, to fill empty slots better)
 		// if it doesn't fit, throw it on the ground!
 		if (!minecraft->player->inventory->add(&resultItem)) {

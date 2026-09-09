@@ -61,7 +61,8 @@ Entity::Entity( Level* level )
 	nextStep(1),
 	makeStepSound(true),
 	invisible(false),
-	inPortal(false)
+	inPortal(false),
+	inPortalDim(-1)
 {
 	_init();
 
@@ -314,7 +315,10 @@ void Entity::move(float xa, float ya, float za) {
         if (walkDist > nextStep && t > 0) {
             nextStep = ((int) walkDist) + 1;
             playStepSound(xt, yt, zt, t);
-            //Tile::tiles[t]->stepOn(level, xt, yt, zt, this); //@todo: step
+        }
+        // Blocks react to being walked on (quicksoil, aerclouds, pressure plates...)
+        if (t > 0 && Tile::tiles[t] != NULL) {
+            Tile::tiles[t]->stepOn(level, xt, yt, zt, this);
         }
     }
 

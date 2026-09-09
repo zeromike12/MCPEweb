@@ -42,6 +42,20 @@ public:
 			case MobTypes::PigZombie:
 				mob = new PigZombie(level);
 				break;
+
+			// Aether
+			case MobTypes::Moa:
+				mob = new Moa(level);
+				break;
+			case MobTypes::Sentry:
+				mob = new Sentry(level);
+				break;
+			case MobTypes::Mimic:
+				mob = new Mimic(level);
+				break;
+			case MobTypes::AetherBoss:
+				mob = new AetherBoss(level);
+				break;
 			default:
                 LOGE("Unknown mob type requested: %d\n", mobType);
                 break;

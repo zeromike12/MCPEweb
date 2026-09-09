@@ -10,7 +10,7 @@
 
 class AddItemEntityPacket: public Packet {
 public:
-    AddItemEntityPacket() {
+    AddItemEntityPacket() : modifier(0) {
     }
 
     AddItemEntityPacket(const ItemEntity* itemEntity)
@@ -18,6 +18,7 @@ public:
         itemId(itemEntity->item.id),
         itemCount(itemEntity->item.count),
         auxValue(itemEntity->item.getAuxValue()),
+        modifier(itemEntity->item.getModifier()),
         x(itemEntity->x),
 		y(itemEntity->y),
 		z(itemEntity->z),
@@ -33,6 +34,7 @@ public:
 		bitStream->Read(itemId);
 		bitStream->Read(itemCount);
 		bitStream->Read(auxValue);
+		bitStream->Read(modifier);
 		bitStream->Read(x);
 		bitStream->Read(y);
 		bitStream->Read(z);
@@ -48,6 +50,7 @@ public:
         bitStream->Write(itemId);
         bitStream->Write(itemCount);
         bitStream->Write(auxValue);
+        bitStream->Write(modifier);
         bitStream->Write(x);
         bitStream->Write(y);
         bitStream->Write(z);
@@ -70,6 +73,7 @@ public:
 
     short itemId;
 	short auxValue;
+	short modifier;
     unsigned char itemCount;
 private:
 	signed char _xa, _ya, _za;

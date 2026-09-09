@@ -41,7 +41,7 @@ public:
 	//throws LevelConflictException
     void checkSession() {}
 
-    ChunkStorage* createChunkStorage(Dimension* dimension) { return this; }
+    ChunkStorage* createChunkStorage(Dimension* dimension);
 
     void saveLevelData(LevelData& levelData, std::vector<Player*>* players);
     // PlayerIO getPlayerIO() { return this; }
@@ -72,6 +72,7 @@ public:
 private:
 	std::string levelId;
 	std::string levelPath;
+	std::string chunkPath; // == levelPath for the overworld, levelPath/DIM<id> otherwise
 	LevelData* loadedLevelData;
 	RegionFile* regionFile;
 	RegionFile* entitiesFile;

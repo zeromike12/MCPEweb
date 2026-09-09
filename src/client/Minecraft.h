@@ -65,7 +65,7 @@ public:
 
 	void handleBuildAction(BuildActionIntention*);
 
-	void switchDimension(int targetDimension);
+	void switchDimension(int targetDimension, bool usePortal = true);
 	void toggleDimension();
 	bool isCreativeMode();
 	void setIsCreativeMode(bool isCreative);
@@ -180,6 +180,7 @@ public:
 	Level* level;
 	Level* overworldLevel;
 	Level* netherLevel;
+	Level* aetherLevel;
 	std::string currentLevelId;
 	std::string currentLevelName;
 	LevelSettings currentSettings;

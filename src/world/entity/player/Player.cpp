@@ -18,6 +18,11 @@
 #include "../EntityEvent.h"
 #include "../../Difficulty.h"
 #include "../../item/ArmorItem.h"
+#include "../../rpg/Rpg.h"
+#include "../../level/LevelSettings.h"
+#include "../../aether/Aether.h"
+#include <sstream>
+#include <cmath>
 
 const float Player::DEFAULT_WALK_SPEED = 0.1f;
 const float Player::DEFAULT_FLY_SPEED = 0.02f;
@@ -39,11 +44,14 @@ Player::Player(Level* level, bool isCreative)
 	bedOffsetY(0),
 	bedOffsetZ(0),
 	respawnPosition(0, -1, 0),
+	respawnDimension(0),
 	allPlayersSleeping(false),
 	portalCounter(0),
 	portalCooldown(0),
 	portalTime(0.0f),
-	oPortalTime(0.0f)
+	oPortalTime(0.0f),
+	rpgPlayerLevel(1),
+	rpgXp(0)
 {
 	canRemove = false;
 
@@ -166,6 +174,7 @@ void Player::stopSleepInBed( bool forcefulWakeUp, bool updateLevelList, bool sav
 		Pos newRespawnPos;
 		BedTile::findStandUpPosition(level, bedPosition.x, bedPosition.y, bedPosition.z, 0, newRespawnPos);
 		setRespawnPosition(newRespawnPos);
+		setRespawnDimension(level && level->dimension ? level->dimension->id : 0);
 	}
 	entityData.clearFlag<SharedFlagsInformation::SharedFlagsInformationType>(DATA_PLAYER_FLAGS_ID, PLAYER_SLEEP_FLAG);
 	allPlayersSleeping = false;
@@ -250,10 +259,16 @@ void Player::tick() {
 			sleepCounter = 0;
 		}
 	}
+	// Cold Parachute (Aether, survival/creative only) - runs before the physics step
+	if (Aether::isAvailable(level)) Aether::tickParachute(this);
     super::tick();
 
 	if (!level->isClientSide) {
 		foodData.tick(this);
+		if (Rpg::isEnabled(level)) {
+			Rpg::tickArmorSets(this);
+			fireImmune = Rpg::setFireImmune(this); // Dragonscale set bonus
+		}
 	//	if (containerMenu != NULL && !containerMenu->stillValid(this)) {
 	//		closeContainer();
 	//	}
@@ -261,7 +276,47 @@ void Player::tick() {
 }
 
 int Player::getMaxHealth() {
-	return MAX_HEALTH;
+	if (!Rpg::isEnabled(level)) return MAX_HEALTH;
+	return Rpg::playerMaxHealth(rpgPlayerLevel) + Rpg::playerArmorBonusHealth(this);
+}
+
+// --- RPG mode -------------------------------------------------------
+
+int Player::getRpgXpToNext() const {
+	return Rpg::xpToNextLevel(rpgPlayerLevel);
+}
+
+void Player::setRpgPlayerLevel(int lvl) {
+	if (lvl < 1) lvl = 1;
+	if (lvl > Rpg::MAX_PLAYER_LEVEL) lvl = Rpg::MAX_PLAYER_LEVEL;
+	rpgPlayerLevel = lvl;
+}
+
+int Player::addRpgXp(int amount) {
+	if (amount <= 0) return 0;
+	int gained = 0;
+	rpgXp += amount;
+	while (rpgPlayerLevel < Rpg::MAX_PLAYER_LEVEL && rpgXp >= Rpg::xpToNextLevel(rpgPlayerLevel)) {
+		rpgXp -= Rpg::xpToNextLevel(rpgPlayerLevel);
+		rpgPlayerLevel++;
+		gained++;
+	}
+	if (rpgPlayerLevel >= Rpg::MAX_PLAYER_LEVEL) rpgXp = 0;
+	if (gained > 0) {
+		// Level up: refill the newly gained hearts and announce it
+		int max = getMaxHealth();
+		health += gained * 2;
+		if (health > max) health = max;
+		lastHealth = health;
+		std::stringstream ss;
+		ss << "\xa7" "e" "Level up! You are now level " << rpgPlayerLevel
+		   << " \xa7" "7(+" << (int) ((Rpg::playerDamageMultiplier(rpgPlayerLevel) - 1.0f) * 100 + 0.5f) << "% damage, "
+		   << (int) ((1.0f - Rpg::playerDefenseMultiplier(rpgPlayerLevel)) * 100 + 0.5f) << "% damage reduction, "
+		   << Rpg::playerMaxHealth(rpgPlayerLevel) / 2 << " hearts)";
+		displayClientMessage(ss.str());
+		level->playSound(this, "random.pop", 1.0f, 0.5f);
+	}
+	return gained;
 }
 
 //
@@ -564,12 +619,37 @@ void Player::_init() {
 }
 
 float Player::getWalkingSpeedModifier() {
-	return super::getWalkingSpeedModifier();
+	float m = super::getWalkingSpeedModifier();
+	if (Rpg::isEnabled(level)) m *= Rpg::setSpeedMultiplier(this);
+	return m;
+}
+
+void Player::knockback(Entity* source, int dmg, float xd, float zd) {
+	if (Rpg::isEnabled(level) && Rpg::setKnockbackImmune(this)) return;
+	super::knockback(source, dmg, xd, zd);
+}
+
+void Player::causeFallDamage(float distance) {
+	if (Rpg::isEnabled(level) && Rpg::setNoFallDamage(this)) return;
+	super::causeFallDamage(distance);
 }
 
 
 void Player::awardKillScore(Entity* victim, int score) {
     this->score += score;
+	if (Rpg::isEnabled(level) && victim && victim->isMob() && !victim->isPlayer() && !level->isClientSide) {
+		Mob* mob = (Mob*) victim;
+		bool hostile = mob->getCreatureBaseType() == MobTypes::BaseEnemy;
+		int xp = Rpg::xpForKill(mob->getRpgLevel(), hostile);
+		xp = (int) std::floor(xp * Rpg::weaponXpMultiplier(this) + 0.5f);
+		int before = rpgPlayerLevel;
+		addRpgXp(xp);
+		if (rpgPlayerLevel == before) {
+			std::stringstream ss;
+			ss << "\xa7" "a" "+" << xp << " XP \xa7" "7(" << rpgXp << "/" << getRpgXpToNext() << ")";
+			displayClientMessage(ss.str());
+		}
+	}
 }
 
 bool Player::isShootable() {
@@ -654,6 +734,10 @@ void Player::readAdditionalSaveData(CompoundTag* entityTag) {
 
     dimension = entityTag->getInt("Dimension");
 
+	if (entityTag->contains("RpgLevel")) setRpgPlayerLevel(entityTag->getInt("RpgLevel"));
+	rpgXp = entityTag->getInt("RpgXp");
+	if (rpgXp < 0) rpgXp = 0;
+
 	//return;
 	if(entityTag->contains("Sleeping") && entityTag->contains("SleepTimer")
 		&& entityTag->contains("BedPositionX") && entityTag->contains("BedPositionY") && entityTag->contains("BedPositionZ")) {
@@ -677,6 +761,7 @@ void Player::readAdditionalSaveData(CompoundTag* entityTag) {
     if (entityTag->contains("SpawnX") && entityTag->contains("SpawnY") && entityTag->contains("SpawnZ")) {
 		respawnPosition.set(entityTag->getInt("SpawnX"), entityTag->getInt("SpawnY"), entityTag->getInt("SpawnZ"));
     }
+	respawnDimension = entityTag->contains("SpawnDimension") ? entityTag->getInt("SpawnDimension") : 0;
 	playerHasRespawnPosition = respawnPosition.y >= 0;
 }
 
@@ -693,6 +778,8 @@ void Player::addAdditonalSaveData(CompoundTag* entityTag) {
 	entityTag->put("Armor", armorTag);
 
     entityTag->putInt("Dimension", dimension);
+	entityTag->putInt("RpgLevel", rpgPlayerLevel);
+	entityTag->putInt("RpgXp", rpgXp);
 	//return;
 	
 	entityTag->putBoolean("Sleeping", isSleeping());
@@ -704,6 +791,7 @@ void Player::addAdditonalSaveData(CompoundTag* entityTag) {
 	entityTag->putInt("SpawnX", respawnPosition.x);
 	entityTag->putInt("SpawnY", respawnPosition.y);
 	entityTag->putInt("SpawnZ", respawnPosition.z);
+	entityTag->putInt("SpawnDimension", respawnDimension);
 }
 
 //static Pos getRespawnPosition(Level level, CompoundTag entityTag) {
@@ -758,6 +846,24 @@ bool Player::hurt(Entity* source, int dmg) {
         else if (level->difficulty == Difficulty::HARD) dmg = dmg * 3 / 2;
     }
 
+	if (Rpg::isEnabled(level) && dmg > 0) {
+		float mult = Rpg::playerDefenseMultiplier(rpgPlayerLevel);
+		mult *= (1.0f - Rpg::playerArmorDamageReduction(this));
+		int scaled = (int) std::floor(dmg * mult + 0.5f);
+		if (scaled < 1) scaled = 1;
+		dmg = scaled;
+
+		// Thorns: reflect a bit of damage back at melee attackers
+		if (source != NULL && source->isMob() && !source->isPlayer() && !level->isClientSide) {
+			int thorns = Rpg::playerArmorThorns(this);
+			if (thorns > 0) {
+				Mob* attacker = (Mob*) source;
+				if (attacker->distanceToSqr(this) < 9.0f) attacker->hurt(this, thorns);
+			}
+			Rpg::onPlayerHurt(this, source);
+		}
+	}
+
    if (dmg == 0) return false;
 
  //   Entity* attacker = source;
@@ -794,10 +900,23 @@ void Player::interact(Entity* entity) {
 
 void Player::attack(Entity* entity) {
 	int dmg = inventory->getAttackDamage(entity);
+	ItemInstance* weapon = inventory->getSelected();
+	bool rpg = Rpg::isEnabled(level);
+	if (rpg) {
+		bool hostile = entity->getCreatureBaseType() == MobTypes::BaseEnemy;
+		if (weapon != NULL && weapon->hasModifier())
+			dmg += Rpg::weaponBonusDamage(weapon->getModifier(), dmg, hostile);
+		dmg = Rpg::applyWeaponPreHit(this, entity, weapon, dmg);
+		dmg = (int) std::floor(dmg * Rpg::playerDamageMultiplier(rpgPlayerLevel) + 0.5f);
+		if (dmg < 1) dmg = 1;
+	}
     if (dmg > 0) {
         entity->hurt(this, dmg);
+        if (rpg) Rpg::applyWeaponOnHit(this, entity, weapon, dmg);
         ItemInstance* item = inventory->getSelected();
-        if (item != NULL && entity->isMob() && abilities.instabuild != true) {
+        if (rpg && item != NULL && Rpg::gearNoDurabilityLoss(item)) {
+            // Swift weapons / Blade of the Wind never wear down
+        } else if (item != NULL && entity->isMob() && abilities.instabuild != true) {
             item->hurtEnemy((Mob*) entity);
             if (item->count <= 0) {
                 //item->snap(this);
@@ -995,6 +1114,8 @@ int Player::getArmorValue() {
         int baseProtection = ((ArmorItem*) item.getItem())->defense;
         val += baseProtection;
     }
+    if (Rpg::isEnabled(level)) val += Rpg::playerArmorBonusDefense(this);
+    if (val > 24) val = 24;
     return val;
 }
 

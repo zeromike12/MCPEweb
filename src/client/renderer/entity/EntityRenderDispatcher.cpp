@@ -25,6 +25,7 @@
 #include "SheepRenderer.h"
 #include "ArrowRenderer.h"
 #include "PaintingRenderer.h"
+#include "AetherRenderers.h"
 
 
 /*static*/
@@ -56,6 +57,12 @@ EntityRenderDispatcher::EntityRenderDispatcher()
 	assign( ER_SNOWBALL_RENDERER,   new ItemSpriteRenderer(Item::snowBall->getIcon(0)));
 	assign( ER_PAINTING_RENDERER,   new PaintingRenderer());
 	assign( ER_FALLINGTILE_RENDERER,new FallingTileRenderer());
+
+	// Aether
+	assign( ER_MOA_RENDERER,        new MoaRenderer(new ChickenModel(), 0.6f));
+	assign( ER_SENTRY_RENDERER,     new SentryRenderer(new CreeperModel(), 0.5f));
+	assign( ER_MIMIC_RENDERER,      new MimicRenderer(new ZombieModel(), 0.5f));
+	assign( ER_AETHERBOSS_RENDERER, new AetherBossRenderer(new ZombieModel(), 0.8f));
 
 	for (RendererIterator it = _renderers.begin(); it != _renderers.end(); ++it) {
 		it->second->init(this);

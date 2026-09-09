@@ -11,6 +11,13 @@
 #include "../level/tile/PortalTile.h"
 #include "../entity/player/Player.h"
 
+// Flint and Steel
+//
+// Right-click a block face to strike a spark on the adjacent air block.
+// If that block is the inside of a complete obsidian frame (2 wide x 3 tall
+// interior, 4x5 outer, either axis) the frame is lit and filled with portal
+// blocks; otherwise a fire block is placed (which also lights portals through
+// FireTile::onPlace when placed at the base of a frame).
 class FlintAndSteelItem: public Item
 {
     typedef Item super;
@@ -23,6 +30,7 @@ public:
     }
 
     virtual bool useOn(ItemInstance* instance, Player* player, Level* level, int x, int y, int z, int face, float clickX, float clickY, float clickZ) {
+        // Offset to the block adjacent to the clicked face
         if (face == 0) y--;
         if (face == 1) y++;
         if (face == 2) z--;
@@ -30,22 +38,34 @@ public:
         if (face == 4) x--;
         if (face == 5) x++;
 
+        if (y < 0 || y >= Level::DEPTH) return false;
+
         int targetType = level->getTile(x, y, z);
-        int fireId = Tile::fire ? Tile::fire->id : 51;
+        int fireId = Tile::fire ? ((Tile*)Tile::fire)->id : 51;
 
-        if (targetType == 0 || targetType == fireId) {
-            level->playSound(x + 0.5f, y + 0.5f, z + 0.5f, "random.click", 1.0f, level->random.nextFloat() * 0.4f + 0.8f);
-
-            // Attempt to activate a Nether Portal frame
-            if (!PortalTile::trySpawnPortal(level, x, y, z)) {
-                level->setTile(x, y, z, fireId);
-            }
+        // Only strike in air (or re-light existing fire)
+        if (targetType != 0 && targetType != fireId) {
+            return false;
         }
 
+        level->playSound(x + 0.5f, y + 0.5f, z + 0.5f, "random.click", 1.0f, level->random.nextFloat() * 0.4f + 0.8f);
+
+        // 1. Try to activate a Nether portal frame around the struck block
+        bool lit = PortalTile::trySpawnPortal(level, x, y, z);
+
+        // 2. Otherwise place fire, which also works as a portal igniter via
+        //    FireTile::onPlace on the server side.
+        if (!lit) {
+            level->setTile(x, y, z, fireId);
+            lit = true;
+        }
+
+        // Wear the tool in survival; the creative game mode restores aux/count
+        // after useOn so this is a no-op there.
         if (instance != NULL) {
             instance->hurt(1);
         }
-        return true;
+        return lit;
     }
 };
 

@@ -28,6 +28,9 @@ int SpawnEggItem::getIcon(int itemAuxValue)
         case MobTypes::Skeleton:  return 13 * ICON_COLUMNS + 6;
         case MobTypes::Spider:    return 13 * ICON_COLUMNS + 7;
         case MobTypes::PigZombie: return 13 * ICON_COLUMNS + 8;
+        case MobTypes::Moa:       return 13 * ICON_COLUMNS + 0;
+        case MobTypes::Sentry:    return 13 * ICON_COLUMNS + 4;
+        case MobTypes::Mimic:     return 13 * ICON_COLUMNS + 4;
         default:                  return 13 * ICON_COLUMNS + 0;
     }
 }
@@ -46,6 +49,9 @@ std::string SpawnEggItem::getDescriptionId(const ItemInstance* itemInstance) con
         case MobTypes::Skeleton:  mobName = "skeleton"; break;
         case MobTypes::Spider:    mobName = "spider"; break;
         case MobTypes::PigZombie: mobName = "pigZombie"; break;
+        case MobTypes::Moa:       mobName = "moa"; break;
+        case MobTypes::Sentry:    mobName = "sentry"; break;
+        case MobTypes::Mimic:     mobName = "mimic"; break;
         default:                  mobName = "generic"; break;
     }
     return super::getDescriptionId() + "." + mobName;
@@ -75,6 +81,10 @@ bool SpawnEggItem::useOn(ItemInstance* itemInstance, Player* player, Level* leve
         }
         if (mob->getEntityTypeId() == MobTypes::Sheep) {
             ((Sheep*)mob)->setColor(Sheep::getSheepColor(&level->random));
+        }
+        if (mob->getEntityTypeId() == MobTypes::Moa) {
+            // Moa eggs hatched in the Incubator yield tame, rideable Moas
+            ((Moa*)mob)->setTame(true);
         }
         if (player && !player->abilities.instabuild) {
             itemInstance->count--;

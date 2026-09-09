@@ -95,6 +95,7 @@ void PortalTile::neighborChanged(Level* level, int x, int y, int z, int type) {
 void PortalTile::entityInside(Level* level, int x, int y, int z, Entity* entity) {
 	if (entity != NULL) {
 		entity->inPortal = true;
+		entity->inPortalDim = -1; // Dimension::NETHER
 	}
 }
 
@@ -151,15 +152,21 @@ bool PortalTile::trySpawnPortal(Level* level, int x, int y, int z) {
 				}
 			}
 
-			if (valid) {
-				// Fill interior with portal blocks
-				for (int i = 0; i < 2; i++) {
-					for (int j = 0; j < 3; j++) {
-						level->setTileAndData(cx + i, cy + j, z, portId, 1);
+				if (valid) {
+					// Fill interior with portal blocks. Neighbour updates must be
+					// suppressed while filling: otherwise each freshly placed portal
+					// block sees the still-empty cell next to it in neighborChanged()
+					// and immediately removes itself.
+					bool oldNoUpdate = level->noNeighborUpdate;
+					level->noNeighborUpdate = true;
+					for (int i = 0; i < 2; i++) {
+						for (int j = 0; j < 3; j++) {
+							level->setTileAndData(cx + i, cy + j, z, portId, 1);
+						}
 					}
+					level->noNeighborUpdate = oldNoUpdate;
+					return true;
 				}
-				return true;
-			}
 		}
 	}
 
@@ -191,15 +198,17 @@ bool PortalTile::trySpawnPortal(Level* level, int x, int y, int z) {
 				}
 			}
 
-			if (valid) {
-				// Fill interior with portal blocks
-				for (int k = 0; k < 2; k++) {
-					for (int j = 0; j < 3; j++) {
-						level->setTileAndData(x, cy + j, cz + k, portId, 2);
+				if (valid) {
+					bool oldNoUpdate = level->noNeighborUpdate;
+					level->noNeighborUpdate = true;
+					for (int k = 0; k < 2; k++) {
+						for (int j = 0; j < 3; j++) {
+							level->setTileAndData(x, cy + j, cz + k, portId, 2);
+						}
 					}
+					level->noNeighborUpdate = oldNoUpdate;
+					return true;
 				}
-				return true;
-			}
 		}
 	}
 

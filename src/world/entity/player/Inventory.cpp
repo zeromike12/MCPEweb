@@ -8,6 +8,20 @@
 #include "../../item/CoalItem.h"
 #include "../../level/tile/SandStoneTile.h"
 #include "../EntityTypes.h"
+#include "../../aether/Aether.h"
+#include "../../level/Level.h"
+#include "../player/Player.h"
+
+namespace {
+	// Feeds Aether::addCreativeItems into the creative inventory
+	class InventorySink : public Aether::ItemInstanceSink {
+	public:
+		InventorySink(Inventory* inv) : inv(inv) {}
+		void add(int id, int count, int aux) { inv->addCreativeItem(new ItemInstance(id, count, aux)); }
+	private:
+		Inventory* inv;
+	};
+}
 
 Inventory::Inventory( Player* player, bool creativeMode )
 :   super(	36 + Inventory::MAX_SELECTION_SIZE,
@@ -113,6 +127,9 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Tile::lapisBlock));
 		addItem(new ItemInstance(Tile::obsidian));
 		addItem(new ItemInstance(Item::flintAndSteel));
+		addItem(new ItemInstance(Item::bucket_water));
+		addItem(new ItemInstance(Item::bucket_lava));
+		addItem(new ItemInstance(Item::bucket_empty));
 		addItem(new ItemInstance(Tile::netherrack));
 		addItem(new ItemInstance(Tile::hellSand));
 		addItem(new ItemInstance(Tile::lightGem));
@@ -131,6 +148,12 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Item::mobEgg, 1, MobTypes::Skeleton));
 		addItem(new ItemInstance(Item::mobEgg, 1, MobTypes::Spider));
 		addItem(new ItemInstance(Item::mobEgg, 1, MobTypes::PigZombie));
+
+		// The Aether (Survival / Creative worlds only - never in RPG)
+		if (player == NULL || player->level == NULL || Aether::isAvailable(player->level)) {
+			InventorySink sink(this);
+			Aether::addCreativeItems(sink);
+		}
 	} else {
 #if defined(WIN32)
 		// Survival
@@ -206,6 +229,10 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Tile::netheriteBlock));
 		addItem(new ItemInstance(Tile::lapisBlock));
 		addItem(new ItemInstance(Tile::obsidian));
+		addItem(new ItemInstance(Item::flintAndSteel));
+		addItem(new ItemInstance(Item::bucket_water));
+		addItem(new ItemInstance(Item::bucket_lava));
+		addItem(new ItemInstance(Item::bucket_empty));
 		addItem(new ItemInstance(Tile::snow));
 		addItem(new ItemInstance(Tile::glass));
         addItem(new ItemInstance(Tile::lightGem));
@@ -287,6 +314,12 @@ void Inventory::setupDefault() {
 		addItem(new ItemInstance(Item::mobEgg, 1, MobTypes::Skeleton));
 		addItem(new ItemInstance(Item::mobEgg, 1, MobTypes::Spider));
 		addItem(new ItemInstance(Item::mobEgg, 1, MobTypes::PigZombie));
+
+		// The Aether (Survival / Creative worlds only - never in RPG)
+		if (player == NULL || player->level == NULL || Aether::isAvailable(player->level)) {
+			InventorySink sink(this);
+			Aether::addCreativeItems(sink);
+		}
 	} else {
 #if defined(WIN32)
 		// Survival

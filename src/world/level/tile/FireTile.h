@@ -62,6 +62,10 @@ public:
         return Tile::SHAPE_FIRE;
     }
 
+    int getRenderLayer() {
+        return Tile::RENDERLAYER_ALPHATEST;
+    }
+
     int getResourceCount(Random* random) {
         return 0;
     }

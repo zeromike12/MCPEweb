@@ -20,6 +20,10 @@ public:
 	static const int Chest = 2;
 	static const int NetherReactor = 3;
 	static const int Sign = 4;
+	// Aether workstations
+	static const int AetherAltar = 5;
+	static const int AetherFreezer = 6;
+	static const int AetherIncubator = 7;
 };
 
 class TileEntityFactory {

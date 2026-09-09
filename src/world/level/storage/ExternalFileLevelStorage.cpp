@@ -6,6 +6,7 @@
 #include "FolderMethods.h"
 #include "../chunk/LevelChunk.h"
 #include "../Level.h"
+#include "../dimension/Dimension.h"
 #include "../LevelConstants.h"
 #include "../tile/TreeTile.h"
 #include "../../entity/EntityFactory.h"
@@ -77,6 +78,7 @@ public:
 ExternalFileLevelStorage::ExternalFileLevelStorage(const std::string& levelId, const std::string& fullPath)
 :	levelId(levelId),
 	levelPath(fullPath),
+	chunkPath(fullPath),
 	loadedLevelData(NULL),
 	regionFile(NULL),
 	entitiesFile(NULL),
@@ -146,6 +148,21 @@ LevelData* ExternalFileLevelStorage::prepareLevel(Level* _level)
 {
 	level = _level;
 	return loadedLevelData;
+}
+
+ChunkStorage* ExternalFileLevelStorage::createChunkStorage(Dimension* dimension)
+{
+	// Every non-overworld dimension gets its own region file, otherwise the
+	// Nether and the overworld would read/write the same chunks.dat and
+	// overwrite each other's terrain. Layout mirrors Minecraft's "DIM<id>/".
+	if (dimension != NULL && dimension->id != Dimension::NORMAL && dimension->id != Dimension::NORMAL_DAYCYCLE) {
+		char buf[32];
+		snprintf(buf, sizeof(buf), "/DIM%d", dimension->id);
+		chunkPath = levelPath + buf;
+		createFolderIfNotExists(chunkPath.c_str());
+		LOGI("Chunk storage for dimension %d at %s\n", dimension->id, chunkPath.c_str());
+	}
+	return this;
 }
 
 bool ExternalFileLevelStorage::readLevelData(const std::string& directory, LevelData& levelData)
@@ -330,7 +347,7 @@ void ExternalFileLevelStorage::save(Level* level, LevelChunk* levelChunk)
 {
 	if (!regionFile)
 	{
-		regionFile = new RegionFile(levelPath);
+		regionFile = new RegionFile(chunkPath);
 		if (!regionFile->open())
 		{
 			delete regionFile;
@@ -361,7 +378,7 @@ LevelChunk* ExternalFileLevelStorage::load(Level* level, int x, int z)
 {
 	if (!regionFile)
 	{
-		regionFile = new RegionFile(levelPath);
+		regionFile = new RegionFile(chunkPath);
 		if (!regionFile->open())
 		{
 			delete regionFile;
@@ -496,7 +513,7 @@ void ExternalFileLevelStorage::saveEntities( Level* level, LevelChunk* levelChun
 	NbtIo::write(&base, &dos);
 	int numBytes = stream.GetNumberOfBytesUsed();
 
-	FILE* fp = fopen((levelPath + "/entities.dat").c_str(), "wb");
+	FILE* fp = fopen((chunkPath + "/entities.dat").c_str(), "wb");
 	if (fp) {
 		int version = 1;
 		fwrite("ENT\0", 1, 4, fp);
@@ -514,7 +531,7 @@ void ExternalFileLevelStorage::saveEntities( Level* level, LevelChunk* levelChun
 
 void ExternalFileLevelStorage::loadEntities(Level* level, LevelChunk* chunk) {
 	lastSavedEntitiesTick = tickCount;
-	FILE* fp = fopen((levelPath + "/entities.dat").c_str(), "rb");
+	FILE* fp = fopen((chunkPath + "/entities.dat").c_str(), "rb");
 	if (fp) {
 		char header[5];
 		int version, numBytes;

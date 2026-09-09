@@ -17,6 +17,8 @@
 #include "../../world/level/material/Material.h"
 #include "../../world/item/Item.h"
 #include "../../world/item/ItemInstance.h"
+#include "../../world/rpg/Rpg.h"
+#include <sstream>
 #include "../../platform/input/Mouse.h"
 #include "../../platform/input/Keyboard.h"
 #include "../../world/level/Level.h"
@@ -107,6 +109,8 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse) {
 
 	renderToolBar(a, ySlot, screenWidth);
 
+	if (Rpg::isEnabled(minecraft->level) && minecraft->gameMode->canHurtPlayer())
+		renderRpgStatus(font, screenWidth, screenHeight, ySlot);
 
 	//font->drawShadow(APP_NAME, 2, 2, 0xffffffff);
 	//font->drawShadow("This is a demo, not the finished product", 2, 10 + 2, 0xffffffff);
@@ -284,7 +288,7 @@ void Gui::setNowPlaying(const std::string& string) {
 void Gui::displayClientMessage(const std::string& messageId) {
 	//Language language = Language.getInstance();
 	//std::string languageString = language.getElement(messageId);
-	addMessage(std::string("Client message: ") + messageId);
+	addMessage(messageId);
 }
 
 void Gui::renderVignette(float br, int w, int h) {
@@ -607,11 +611,14 @@ void Gui::renderHearts() {
 	int xx = 2;//screenWidth / 2 - getNumSlots() * 10;
 
 	int armor = minecraft->player->getArmorValue();
-	for (int i = 0; i < Player::MAX_HEALTH / 2; i++) {
-		int yo = 2;
+	int maxHealth = minecraft->player->getMaxHealth();
+	if (maxHealth < Player::MAX_HEALTH) maxHealth = Player::MAX_HEALTH;
+	int heartsPerRow = 10;
+	for (int i = 0; i < maxHealth / 2; i++) {
+		int yo = 2 + (i / heartsPerRow) * 8;
 		int ip2 = i + i + 1;
 
-		if (armor > 0) {
+		if (armor > 0 && i < 10) {
 		    int xo = xx + 80 + i * 8 + 4;
 		    if (ip2 < armor) blit(xo, yo, 16 + 2 * 9, 9 * 1, 9, 9);
 		    else if (ip2 == armor) blit(xo, yo, 16 + 4 * 9, 9 * 1, 9, 9);
@@ -620,7 +627,7 @@ void Gui::renderHearts() {
 
 		int bg = 0;
 		if (blink) bg = 1;
-		int xo = xx + i * 8;
+		int xo = xx + (i % heartsPerRow) * 8;
 		if (h <= 4) {
 			yo = yo + random.nextInt(2) - 1;
 		}
@@ -634,9 +641,38 @@ void Gui::renderHearts() {
 	}
 }
 
+void Gui::renderRpgStatus(Font* font, int screenWidth, int screenHeight, int ySlot) {
+	Player* player = minecraft->player;
+	int lvl = player->getRpgPlayerLevel();
+	int xp = player->getRpgXp();
+	int need = player->getRpgXpToNext();
+
+	// XP bar, right under the hearts/armor row
+	int rows = (player->getMaxHealth() + 19) / 20;
+	if (rows < 1) rows = 1;
+	const int barX = 2;
+	const int barY = 2 + rows * 8 + 10; // below hearts (and bubbles)
+	const int barW = 160;
+	const int barH = 3;
+	float frac = need > 0 ? (float) xp / (float) need : 1.0f;
+	if (frac > 1) frac = 1;
+	if (lvl >= Rpg::MAX_PLAYER_LEVEL) frac = 1;
+
+	fill(barX - 1, barY - 1, barX + barW + 1, barY + barH + 1, 0xa0000000);
+	fill(barX, barY, barX + barW, barY + barH, 0xff2a2a2a);
+	fill(barX, barY, barX + (int) (barW * frac), barY + barH, 0xff80ff20);
+
+	std::stringstream ss;
+	ss << "Lv." << lvl;
+	if (lvl < Rpg::MAX_PLAYER_LEVEL) ss << "  " << xp << "/" << need << " XP";
+	else ss << "  MAX";
+	font->drawShadow(ss.str(), (float) barX + barW + 4, (float) barY - 3, 0xffffff40);
+}
+
 void Gui::renderBubbles() {
 	if (minecraft->player->isUnderLiquid(Material::water)) {
 		int yo = 12;
+		if (Rpg::isEnabled(minecraft->level)) yo = 2 + ((minecraft->player->getMaxHealth() + 19) / 20) * 8 + 2;
 		int count = (int) std::ceil((minecraft->player->airSupply - 2) * 10.0f / Player::TOTAL_AIR_SUPPLY);
 		int extra = (int) std::ceil((minecraft->player->airSupply) * 10.0f / Player::TOTAL_AIR_SUPPLY) - count;
 		for (int i = 0; i < count + extra; i++) {
@@ -694,8 +730,15 @@ void Gui::renderOnSelectItemNameText( const int screenWidth, Font* font, int ySl
 				float percentage = cubeSmoothStep(time *  4, 0.0f, 1.0f);
 				alpha = int(percentage * 255);
 			}
-			if(alpha != 0)
+			if(alpha != 0) {
 				font->drawShadow(item->getName(), x, y, 0x00ffffff + (alpha << 24));
+				std::string desc = Rpg::describeGear(minecraft->player, item);
+				if (desc.empty() && item->hasModifier()) desc = Rpg::describeModifier(item->getModifier());
+				if (!desc.empty()) {
+					float dx = float(screenWidth / 2 - font->width(desc) / 2);
+					font->drawShadow(desc, dx, y - 10, 0x00c0c0c0 + (alpha << 24));
+				}
+			}
 		}
 	}
 }

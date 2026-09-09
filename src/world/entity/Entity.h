@@ -123,6 +123,7 @@ public:
 	virtual EntityRendererId queryEntityRenderer() { return ER_DEFAULT_RENDERER; }
 
 	virtual bool isMob() { return false; }
+	bool isFireImmune() const { return fireImmune; }
 	// I hate myself
 	virtual bool isItemEntity();
 	// Me 2
@@ -210,6 +211,7 @@ public:
 	bool invisible;
 	bool reallyRemoveIfPlayer;
 	bool inPortal;
+	int inPortalDim; // dimension id the portal we stand in leads to (Nether/Aether)
 protected:
 	static Random sharedRandom;
 	int airCapacity;

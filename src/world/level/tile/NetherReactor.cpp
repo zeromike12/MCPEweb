@@ -6,7 +6,7 @@
 NetherReactor::NetherReactor( int id, int tex, const Material* material ) : super(id, tex, material) { }
 
 bool NetherReactor::use( Level* level, int x, int y, int z, Player* player ) {
-	if(level->getLevelData()->getGameType() != GameType::Survival)
+	if(!GameType::isSurvivalLike(level->getLevelData()->getGameType()))
 		return false;
 
 	// Level, X, Z
