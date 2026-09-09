@@ -139,4 +139,13 @@ public:
 	MoaEggItem(int id);
 };
 
+// Cold Parachute: made from cloudwool. Hold it (selected) while falling and
+// you drift down slowly without fall damage; each use wears it a little.
+class ColdParachuteItem : public Item {
+	typedef Item super;
+public:
+	ColdParachuteItem(int id);
+	bool isHandEquipped() { return false; }
+};
+
 #endif /*NET_MINECRAFT_WORLD_AETHER__AetherItems_H__*/

@@ -65,7 +65,7 @@ public:
 
 	void handleBuildAction(BuildActionIntention*);
 
-	void switchDimension(int targetDimension);
+	void switchDimension(int targetDimension, bool usePortal = true);
 	void toggleDimension();
 	bool isCreativeMode();
 	void setIsCreativeMode(bool isCreative);

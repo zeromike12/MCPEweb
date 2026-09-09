@@ -297,7 +297,7 @@ void Minecraft::toggleDimension() {
 	}
 }
 
-void Minecraft::switchDimension(int targetDim) {
+void Minecraft::switchDimension(int targetDim, bool usePortal /*= true*/) {
 	LOGI("Minecraft::switchDimension -> %d\n", targetDim);
 	if (!player || !level) return;
 	if (!level->dimension || level->dimension->id == targetDim) return;
@@ -355,9 +355,16 @@ void Minecraft::switchDimension(int targetDim) {
 	gameMode->initLevel(nextLevel);
 
 	// Find or create destination portal (an Aether portal when travelling to / from the Aether)
-	PortalForcer::lastTripWasAether = (currentDim == Dimension::AETHER || targetDim == Dimension::AETHER);
 	float spawnX = targetX, spawnY = 64.0f, spawnZ = targetZ;
-	PortalForcer::findOrCreatePortal(nextLevel, (int)targetX, (int)targetZ, targetDim, spawnX, spawnY, spawnZ);
+	if (usePortal) {
+		PortalForcer::lastTripWasAether = (currentDim == Dimension::AETHER || targetDim == Dimension::AETHER);
+		PortalForcer::findOrCreatePortal(nextLevel, (int)targetX, (int)targetZ, targetDim, spawnX, spawnY, spawnZ);
+	} else {
+		// Respawning: the caller positions the player afterwards, just make sure the spawn chunks exist
+		nextLevel->validateSpawn();
+		Pos sp = nextLevel->getSharedSpawnPos();
+		spawnX = sp.x + 0.5f; spawnY = (float)sp.y + 1.0f; spawnZ = sp.z + 0.5f;
+	}
 
 	// Move player
 	player->setLevel(nextLevel);
@@ -1550,6 +1557,19 @@ Player* Minecraft::respawnPlayer(int playerId) {
 }
 
 void Minecraft::resetPlayer(Player* player) {
+	// Respawn in the dimension that owns the respawn point: a bed in the Aether
+	// brings you back to the Aether, otherwise the world spawn is in the overworld.
+	// (Only the local player can hop levels here - remote players stay put.)
+	if (player == this->player && level && level->dimension) {
+		player->reset(); // clear the 'removed' flag before the player is re-added to a level
+		int wantDim = player->hasRespawnPosition() ? player->getRespawnDimension() : Dimension::NORMAL;
+		if (wantDim == Dimension::NORMAL_DAYCYCLE) wantDim = Dimension::NORMAL;
+		int curDim = level->dimension->id == Dimension::NORMAL_DAYCYCLE ? Dimension::NORMAL : level->dimension->id;
+		if (wantDim != curDim && (wantDim == Dimension::NORMAL || wantDim == Dimension::NETHER || wantDim == Dimension::AETHER)) {
+			switchDimension(wantDim, false);
+		}
+	}
+
 	level->validateSpawn();
 	player->reset();
 

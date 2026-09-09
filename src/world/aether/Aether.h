@@ -146,6 +146,7 @@ namespace Aether {
 		const int GravititeShovel = 138;
 		const int GravititeSword  = 139;
 		const int AetherPortalItem= 140; // creative-only: places a lit portal block
+		const int ColdParachute   = 141;
 	}
 
 	// ------------------------------------------------------------------
@@ -239,6 +240,7 @@ namespace Aether {
 	extern Item* blueberry;
 	extern Item* enchantedBlueberry;
 	extern Item* moaEgg;
+	extern Item* coldParachute;
 	extern Item* bronzeKey;
 	extern Item* silverKey;
 	extern Item* goldKey;
@@ -273,6 +275,9 @@ namespace Aether {
 		virtual void add(int id, int count, int aux) = 0;
 	};
 	void addCreativeItems(ItemInstanceSink& sink);
+
+	// Called every tick for players: applies the Cold Parachute when one is held while falling.
+	void tickParachute(Player* player);
 
 	// ------------------------------------------------------------------
 	// Tool helpers

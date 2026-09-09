@@ -276,3 +276,13 @@ DungeonKeyItem::DungeonKeyItem(int id, int tier) : super(id), tier(tier) {
 MoaEggItem::MoaEggItem(int id) : super(id) {
 	setMaxStackSize(16);
 }
+
+// ======================================================================
+// ColdParachuteItem
+// ======================================================================
+ColdParachuteItem::ColdParachuteItem(int id)
+:	super(id)
+{
+	setMaxStackSize(1);
+	setMaxDamage(240);
+}

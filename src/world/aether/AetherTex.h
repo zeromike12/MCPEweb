@@ -107,6 +107,7 @@ namespace AetherIcon {
 	static const int GRAVITITE_AXE = 171; // (11,10)
 	static const int GRAVITITE_SHOVEL = 178; // (2,11)
 	static const int GRAVITITE_SWORD = 179; // (3,11)
+	static const int COLD_PARACHUTE = 180; // (4,11)
 }
 
 #endif // AETHER_TEX_H__

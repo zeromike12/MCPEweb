@@ -763,7 +763,7 @@ bool LockedStoneTile::use(Level* level, int x, int y, int z, Player* player) {
 	Item* needed = (getDungeonTier() == Aether::Dungeon::Bronze) ? Aether::bronzeKey
 		: (getDungeonTier() == Aether::Dungeon::Silver ? Aether::silverKey : Aether::goldKey);
 	if (item->id != needed->id) {
-		if (level->isClientSide) player->displayClientMessage("This door needs a key");
+		if (player) player->displayClientMessage("This door needs a key");
 		return true;
 	}
 	if (!level->isClientSide) {
@@ -1325,7 +1325,7 @@ SunAltarTile::SunAltarTile(int id, int topTex, int sideTex)
 
 bool SunAltarTile::use(Level* level, int x, int y, int z, Player* player) {
 	if (!Aether::isAetherLevel(level)) {
-		if (level->isClientSide) player->displayClientMessage("The Sun Altar only answers in the Aether");
+		if (player) player->displayClientMessage("The Sun Altar only answers in the Aether");
 		return true;
 	}
 	if (level->isClientSide) return true;

@@ -74,7 +74,7 @@ bool Moa::interact(Player* player) {
 		return true;
 	}
 	if (!tame) {
-		if (level->isClientSide) player->displayClientMessage("This Moa is wild - feed it Blueberries first");
+		if (player) player->displayClientMessage("This Moa is wild - feed it Blueberries first");
 		return true;
 	}
 	// Mount / dismount
@@ -87,7 +87,7 @@ bool Moa::interact(Player* player) {
 	jumpsLeft = 3;
 	player->noPhysics = true;
 	player->fallDistance = 0;
-	if (level->isClientSide) player->displayClientMessage("Riding Moa - jump to glide, sneak to dismount");
+	if (player) player->displayClientMessage("Riding Moa - jump to glide, sneak to dismount");
 	return true;
 }
 
@@ -361,7 +361,7 @@ bool AetherBoss::hurt(Entity* source, int dmg) {
 			|| item->id == Item::pickAxe_iron->id || item->id == Item::pickAxe_gold->id || item->id == Item::pickAxe_emerald->id
 			|| item->id == Aether::skyrootPickaxe->id || item->id == Aether::zanitePickaxe->id || item->id == Aether::gravititePickaxe->id);
 		if (!pick) {
-			if (level->isClientSide) p->displayClientMessage("The Slider can only be hurt with a pickaxe");
+			if (p) p->displayClientMessage("The Slider can only be hurt with a pickaxe");
 			dmg = Mth::Max(1, dmg / 4);
 		}
 	}

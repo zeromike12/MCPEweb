@@ -20,6 +20,7 @@
 #include "../../item/ArmorItem.h"
 #include "../../rpg/Rpg.h"
 #include "../../level/LevelSettings.h"
+#include "../../aether/Aether.h"
 #include <sstream>
 #include <cmath>
 
@@ -43,6 +44,7 @@ Player::Player(Level* level, bool isCreative)
 	bedOffsetY(0),
 	bedOffsetZ(0),
 	respawnPosition(0, -1, 0),
+	respawnDimension(0),
 	allPlayersSleeping(false),
 	portalCounter(0),
 	portalCooldown(0),
@@ -172,6 +174,7 @@ void Player::stopSleepInBed( bool forcefulWakeUp, bool updateLevelList, bool sav
 		Pos newRespawnPos;
 		BedTile::findStandUpPosition(level, bedPosition.x, bedPosition.y, bedPosition.z, 0, newRespawnPos);
 		setRespawnPosition(newRespawnPos);
+		setRespawnDimension(level && level->dimension ? level->dimension->id : 0);
 	}
 	entityData.clearFlag<SharedFlagsInformation::SharedFlagsInformationType>(DATA_PLAYER_FLAGS_ID, PLAYER_SLEEP_FLAG);
 	allPlayersSleeping = false;
@@ -256,6 +259,8 @@ void Player::tick() {
 			sleepCounter = 0;
 		}
 	}
+	// Cold Parachute (Aether, survival/creative only) - runs before the physics step
+	if (Aether::isAvailable(level)) Aether::tickParachute(this);
     super::tick();
 
 	if (!level->isClientSide) {
@@ -756,6 +761,7 @@ void Player::readAdditionalSaveData(CompoundTag* entityTag) {
     if (entityTag->contains("SpawnX") && entityTag->contains("SpawnY") && entityTag->contains("SpawnZ")) {
 		respawnPosition.set(entityTag->getInt("SpawnX"), entityTag->getInt("SpawnY"), entityTag->getInt("SpawnZ"));
     }
+	respawnDimension = entityTag->contains("SpawnDimension") ? entityTag->getInt("SpawnDimension") : 0;
 	playerHasRespawnPosition = respawnPosition.y >= 0;
 }
 
@@ -785,6 +791,7 @@ void Player::addAdditonalSaveData(CompoundTag* entityTag) {
 	entityTag->putInt("SpawnX", respawnPosition.x);
 	entityTag->putInt("SpawnY", respawnPosition.y);
 	entityTag->putInt("SpawnZ", respawnPosition.z);
+	entityTag->putInt("SpawnDimension", respawnDimension);
 }
 
 //static Pos getRespawnPosition(Level level, CompoundTag entityTag) {

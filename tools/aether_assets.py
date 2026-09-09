@@ -334,6 +334,24 @@ TORCH = [
     "................",
     "................",
 ]
+PARACHUTE = [
+    "................",
+    ".....cccccc.....",
+    "...cccCCCCccc...",
+    "..ccCCCCCCCCcc..",
+    ".ccCCCCCCCCCCcc.",
+    ".cCCCcCCCCcCCCc.",
+    ".cccccccccccccc.",
+    "..s....ss....s..",
+    "..s....ss....s..",
+    "...s...ss...s...",
+    "...s...ss...s...",
+    "....s..ss..s....",
+    "....s..ss..s....",
+    ".....shhhhs.....",
+    ".....hhhhhh.....",
+    "................",
+]
 KEY = [
     "................",
     "................",
@@ -782,6 +800,8 @@ def build_items():
         it[mat + '_AXE'] = template(AXE, pal)
         it[mat + '_SHOVEL'] = template(SHOVEL, pal)
         it[mat + '_SWORD'] = template(SWORD, pal)
+    # appended last so earlier icon indices stay stable
+    it['COLD_PARACHUTE'] = template(PARACHUTE, {'c': (225, 235, 250), 'C': (250, 252, 255), 's': (120, 120, 130), 'h': shade(SKY_WOOD, 0.8)})
     return it
 
 

@@ -68,6 +68,8 @@ public:
     void resetPos(bool clearMore);
     Pos getRespawnPosition();
     void setRespawnPosition(const Pos& respawnPosition);
+	int  getRespawnDimension() const { return respawnDimension; }
+	void setRespawnDimension(int dim) { respawnDimension = dim; }
     
     bool isShootable();
     bool isCreativeModeAllowed();
@@ -210,6 +212,7 @@ protected:
 	static const int NUM_ARMOR = 4;
 private:
     Pos respawnPosition;
+	int respawnDimension; // dimension the respawn position (bed) lives in
 	bool playerHasRespawnPosition;
 	bool playerIsSleeping;
 	bool allPlayersSleeping;

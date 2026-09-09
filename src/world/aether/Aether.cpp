@@ -20,6 +20,8 @@
 #include "../item/crafting/Recipes.h"
 #include "../item/crafting/FurnaceRecipes.h"
 #include "../entity/Mob.h"
+#include "../entity/player/Player.h"
+#include "../entity/player/Inventory.h"
 #include "../entity/MobFactory.h"
 #include "../entity/EntityTypes.h"
 #include "../entity/animal/AetherMobs.h"
@@ -133,6 +135,7 @@ Item* goldenAmber = NULL;
 Item* blueberry = NULL;
 Item* enchantedBlueberry = NULL;
 Item* moaEgg = NULL;
+Item* coldParachute = NULL;
 Item* bronzeKey = NULL;
 Item* silverKey = NULL;
 Item* goldKey = NULL;
@@ -285,6 +288,7 @@ void initItems() {
 	blueberry      = (new FoodItem(ItemId::Blueberry, 2, false))->setIcon(BLUEBERRY)->setCategory(F)->setDescriptionId("blueberry");
 	enchantedBlueberry = (new FoodItem(ItemId::EnchantedBlueberry, 8, false, 1.2f))->setIcon(BLUEBERRY)->setCategory(F)->setDescriptionId("enchantedBlueberry");
 	moaEgg         = (new MoaEggItem(ItemId::MoaEgg))->setIcon(MOA_EGG)->setCategory(F)->setDescriptionId("moaEgg");
+	coldParachute  = (new ColdParachuteItem(ItemId::ColdParachute))->setIcon(COLD_PARACHUTE)->setCategory(T)->setDescriptionId("coldParachute");
 	bronzeKey      = (new DungeonKeyItem(ItemId::BronzeKey, Dungeon::Bronze))->setIcon(BRONZE_KEY)->setCategory(T)->setDescriptionId("bronzeKey");
 	silverKey      = (new DungeonKeyItem(ItemId::SilverKey, Dungeon::Silver))->setIcon(SILVER_KEY)->setCategory(T)->setDescriptionId("silverKey");
 	goldKey        = (new DungeonKeyItem(ItemId::GoldKey, Dungeon::Gold))->setIcon(GOLD_KEY)->setCategory(T)->setDescriptionId("goldKey");
@@ -327,6 +331,7 @@ void addRecipes(Recipes* r) {
 	r->addShapedRecipe(ItemInstance(skyrootBedItem, 1), "###", "XXX", definition('#', ItemInstance(Item::items[Tile::cloth->id], 1, 0), 'X', skyrootPlanks));
 	r->addShapedRecipe(ItemInstance(skyrootBedItem, 1), "###", "XXX", definition('#', ItemInstance(Item::items[cloudwool->id], 1, 0), 'X', skyrootPlanks));
 	r->addShapedRecipe(ItemInstance(aetherSignItem, 1), "###", "###", " X ", definition('#', skyrootPlanks, 'X', Item::stick));
+	r->addShapedRecipe(ItemInstance(coldParachute, 1), "###", "# #", " X ", definition('#', ItemInstance(Item::items[cloudwool->id], 1, Recipe::ANY_AUX_VALUE), 'X', Item::stick));
 
 	// Stone
 	r->addShapedRecipe(ItemInstance(holystoneBricks, 4), "##", "##", definition('#', holystone));
@@ -416,7 +421,7 @@ void addCreativeItems(ItemInstanceSink& sink) {
 
 	Item* items[] = {
 		Item::bucket_water, Item::bucket_lava, Item::bucket_empty,
-		ambrosiumShard, zaniteGem, gravititePlate, goldenAmber, blueberry, enchantedBlueberry, moaEgg,
+		ambrosiumShard, zaniteGem, gravititePlate, goldenAmber, blueberry, enchantedBlueberry, moaEgg, coldParachute,
 		bronzeKey, silverKey, goldKey, skyrootDoorItem, skyrootBedItem, aetherSignItem,
 		skyrootPickaxe, skyrootAxe, skyrootShovel, skyrootSword,
 		zanitePickaxe, zaniteAxe, zaniteShovel, zaniteSword,
@@ -476,6 +481,28 @@ Mob* spawnMob(Level* level, int mobType, float x, float y, float z) {
 		boss->homeX = (int)x; boss->homeY = (int)y; boss->homeZ = (int)z;
 	}
 	return mob;
+}
+
+// ----------------------------------------------------------------------
+// Cold Parachute
+// ----------------------------------------------------------------------
+void tickParachute(Player* player) {
+	if (!player || !coldParachute || !player->level) return;
+	if (player->onGround || player->yd >= -0.1f) return;
+	if (player->abilities.flying || player->isInWater()) return;
+	ItemInstance* held = player->inventory->getSelected();
+	if (!held || held->isNull() || held->id != coldParachute->id) return;
+
+	// Drift down gently and never take fall damage while the chute is out
+	if (player->yd < -0.12f) player->yd = -0.12f;
+	player->fallDistance = 0;
+	// Wear the chute out slowly (survival only)
+	if (!player->level->isClientSide && !player->abilities.instabuild && (player->tickCount % 10) == 0) {
+		held->hurt(1);
+		if (held->getDamageValue() >= held->getMaxDamage()) player->inventory->removeItem(held);
+	}
+	if ((player->tickCount % 4) == 0)
+		player->level->addParticle(PARTICLETYPE(snowballpoof), player->x + (player->random.nextFloat() - 0.5f), player->y + 1.2f, player->z + (player->random.nextFloat() - 0.5f), 0, 0, 0);
 }
 
 } // namespace Aether
