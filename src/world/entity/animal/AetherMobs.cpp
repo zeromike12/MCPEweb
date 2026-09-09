@@ -3,6 +3,7 @@
 #include "../../aether/AetherTiles.h"
 #include "../../level/Level.h"
 #include "../../level/tile/Tile.h"
+#include "../../level/tile/FireTile.h"
 #include "../../item/Item.h"
 #include "../../item/ItemInstance.h"
 #include "../player/Player.h"

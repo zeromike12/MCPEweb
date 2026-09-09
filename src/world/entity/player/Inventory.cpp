@@ -17,7 +17,7 @@ namespace {
 	class InventorySink : public Aether::ItemInstanceSink {
 	public:
 		InventorySink(Inventory* inv) : inv(inv) {}
-		void add(int id, int count, int aux) { inv->addItem(new ItemInstance(id, count, aux)); }
+		void add(int id, int count, int aux) { inv->addCreativeItem(new ItemInstance(id, count, aux)); }
 	private:
 		Inventory* inv;
 	};

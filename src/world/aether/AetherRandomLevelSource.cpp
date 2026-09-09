@@ -274,26 +274,35 @@ void AetherRandomLevelSource::postProcess(ChunkSource* parent, int xt, int zt) {
 
 	int holyId = Aether::holystone->id;
 
-	// 1. Ores inside holystone
-	for (int i = 0; i < 12; i++) {
-		int x = xo + random.nextInt(16), y = ISLAND_MIN_Y + random.nextInt(ISLAND_MAX_Y - ISLAND_MIN_Y), z = zo + random.nextInt(16);
-		OreFeature(Aether::ambrosiumOre->id, 12, holyId).place(level, &random, x, y, z);
-	}
-	for (int i = 0; i < 8; i++) {
-		int x = xo + random.nextInt(16), y = ISLAND_MIN_Y + random.nextInt(ISLAND_MAX_Y - ISLAND_MIN_Y - 20), z = zo + random.nextInt(16);
-		OreFeature(Aether::zaniteOre->id, 8, holyId).place(level, &random, x, y, z);
-	}
-	for (int i = 0; i < 3; i++) {
-		int x = xo + random.nextInt(16), y = ISLAND_MIN_Y + random.nextInt(30), z = zo + random.nextInt(16);
-		OreFeature(Aether::gravititeOre->id, 6, holyId).place(level, &random, x, y, z);
-	}
-	for (int i = 0; i < 6; i++) {
-		int x = xo + random.nextInt(16), y = ISLAND_MIN_Y + random.nextInt(ISLAND_MAX_Y - ISLAND_MIN_Y), z = zo + random.nextInt(16);
-		OreFeature(Aether::icestone->id, 10, holyId).place(level, &random, x, y, z);
-	}
-	for (int i = 0; i < 4; i++) {
-		int x = xo + random.nextInt(16), y = ISLAND_MIN_Y + random.nextInt(ISLAND_MAX_Y - ISLAND_MIN_Y), z = zo + random.nextInt(16);
-		OreFeature(Aether::aetherDirt->id, 16, holyId).place(level, &random, x, y, z);
+	// 1. Ores inside holystone. Islands only fill a fraction of the 40..112 band, so
+	//    pick the y inside the island body under a random column instead of blindly.
+	// NB: OreFeature places nothing for sizes below ~8 (the blob radius rounds away), so
+	//     rarity is controlled with the try count rather than the vein size.
+	struct OreSpec { Tile* tile; int size; int tries; };
+	OreSpec ores[] = {
+		{ Aether::ambrosiumOre, 12, 14 },
+		{ Aether::zaniteOre,    10, 10 },
+		{ Aether::gravititeOre,  8,  5 },
+		{ Aether::icestone,     10,  6 },
+		{ Aether::aetherDirt,   16,  4 },
+	};
+	for (size_t o = 0; o < sizeof(ores) / sizeof(ores[0]); o++) {
+		for (int i = 0; i < ores[o].tries; i++) {
+			int x = xo + random.nextInt(16), z = zo + random.nextInt(16);
+			// Find island top and bottom in this column
+			int top = -1, bottom = -1;
+			for (int yy = ISLAND_MAX_Y + 8; yy >= ISLAND_MIN_Y - 4; yy--) {
+				int t = level->getTile(x, yy, z);
+				if (t == holyId) { if (top < 0) top = yy; bottom = yy; }
+			}
+			if (top < 0) continue;
+			int span = top - bottom;
+			int y = bottom + (span > 0 ? random.nextInt(span + 1) : 0);
+			// gravitite prefers the lower half of islands (but not the very underside where the blob would miss)
+			if (ores[o].tile == Aether::gravititeOre) y = bottom + 2 + (span > 4 ? random.nextInt(span / 2) : 0);
+			// OreFeature centres on (x+8, y+2..4, z+8): shift back so the blob lands on the sampled column
+			OreFeature(ores[o].tile->id, ores[o].size, holyId).place(level, &random, x - 8, y - 3, z - 8);
+		}
 	}
 
 	// 2. Trees on the island surface
@@ -309,20 +318,17 @@ void AetherRandomLevelSource::postProcess(ChunkSource* parent, int xt, int zt) {
 	}
 
 	// 3. Flowers, berry bushes
-	if (random.nextInt(2) == 0) {
+	{
 		int x = xo + random.nextInt(16) + 8, z = zo + random.nextInt(16) + 8;
-		int y = level->getTopSolidBlock(x, z);
-		AetherPlantPatchFeature(Aether::whiteFlower->id, 6).place(level, &random, x, y, z);
-	}
-	if (random.nextInt(3) == 0) {
-		int x = xo + random.nextInt(16) + 8, z = zo + random.nextInt(16) + 8;
-		int y = level->getTopSolidBlock(x, z);
-		AetherPlantPatchFeature(Aether::purpleFlower->id, 5).place(level, &random, x, y, z);
+		AetherPlantPatchFeature(Aether::whiteFlower->id, 8).place(level, &random, x, 0, z);
 	}
 	if (random.nextInt(2) == 0) {
 		int x = xo + random.nextInt(16) + 8, z = zo + random.nextInt(16) + 8;
-		int y = level->getTopSolidBlock(x, z);
-		AetherPlantPatchFeature(Aether::berryBush->id, 4).place(level, &random, x, y, z);
+		AetherPlantPatchFeature(Aether::purpleFlower->id, 6).place(level, &random, x, 0, z);
+	}
+	{
+		int x = xo + random.nextInt(16) + 8, z = zo + random.nextInt(16) + 8;
+		AetherPlantPatchFeature(Aether::berryBush->id, 6).place(level, &random, x, 0, z);
 	}
 
 	// 4. Aerclouds

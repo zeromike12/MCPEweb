@@ -2,6 +2,7 @@
 #include "Aether.h"
 #include "../level/Level.h"
 #include "../level/tile/Tile.h"
+#include "../level/tile/LeafTile.h"
 #include "../../util/Random.h"
 #include <cstdlib>
 
@@ -96,12 +97,14 @@ bool AetherPlantPatchFeature::place(Level* level, Random* random, int x, int y, 
 	bool any = false;
 	for (int i = 0; i < count; i++) {
 		int xx = x + random->nextInt(8) - random->nextInt(8);
-		int yy = y + random->nextInt(4) - random->nextInt(4);
 		int zz = z + random->nextInt(8) - random->nextInt(8);
-		if (yy < 1 || yy >= Level::DEPTH - 1) continue;
-		if (!level->isEmptyTile(xx, yy, zz)) continue;
-		int below = level->getTile(xx, yy - 1, zz);
-		if (below != Aether::aetherGrass->id && below != Aether::enchantedGrass->id) continue;
+		// Islands float over the void, so locate the grass surface of this column directly
+		int yy = -1;
+		for (int sy = 120; sy > 32; sy--) {
+			int below = level->getTile(xx, sy - 1, zz);
+			if (below == Aether::aetherGrass->id || below == Aether::enchantedGrass->id) { yy = sy; break; }
+		}
+		if (yy < 1 || !level->isEmptyTile(xx, yy, zz)) continue;
 		level->setTileNoUpdate(xx, yy, zz, tileId);
 		any = true;
 	}

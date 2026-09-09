@@ -23,6 +23,9 @@ public:
     Inventory(Player* player, bool creativeMode);
 	~Inventory();
 
+	// Public wrapper used by the creative-menu population helpers
+	int addCreativeItem(ItemInstance* item) { return addItem(item); }
+
 	void clearInventoryWithDefault();
 	//
 	// Selection slots

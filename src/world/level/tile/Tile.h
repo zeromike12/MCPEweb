@@ -341,7 +341,7 @@ public:
 
     virtual void triggerEvent(Level* level, int x, int y, int z, int b0, int b1) {}
 
-protected:
+public:
     virtual Tile* setSoundType(const SoundType& soundType);
 
     virtual Tile* setLightBlock(int i);
@@ -352,6 +352,7 @@ protected:
 
     virtual void setTicking(bool tick);
 
+protected:
     /*** Returns the item instance's auxValue when a TileItem is spawned from this Tile. */
     virtual int getSpawnResourcesAuxValue(int data);
 

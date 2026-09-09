@@ -60,11 +60,11 @@ AetherGrassTile::AetherGrassTile(int id, int topTex, int sideTex, bool enchanted
 }
 
 int AetherGrassTile::getTexture(LevelSource* level, int x, int y, int z, int face) {
-	return getTexture(face);
+	return super::getTexture(face);
 }
 
 int AetherGrassTile::getTexture(int face, int data) {
-	return getTexture(face);
+	return super::getTexture(face);
 }
 
 void AetherGrassTile::tick(Level* level, int x, int y, int z, Random* random) {
@@ -1100,8 +1100,7 @@ void QuicksoilGlassPaneTile::entityInside(Level* level, int x, int y, int z, Ent
 // ======================================================================
 static int clothColor(int data) {
 	// data is a dye color index (0..15, DyePowderItem order). 15 = white.
-	const int* rgb = DyePowderItem::COLOR_RGB[data & 15];
-	return (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
+	return DyePowderItem::COLOR_RGB[data & 15];
 }
 
 CloudwoolTile::CloudwoolTile(int id, int tex)
