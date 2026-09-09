@@ -6,3 +6,4 @@ project/emscripten/*.rsp
 project/emscripten/link.rsp
 project/emscripten/build*.log
 project/emscripten/build_output*.txt
+__pycache__/

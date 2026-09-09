@@ -302,7 +302,7 @@ void FurnaceScreen::recheckRecipes()
 	Stopwatch w;
 	w.start();
 
-	const FurnaceRecipes* recipes = FurnaceRecipes::getInstance();
+	(void)FurnaceRecipes::getInstance();
 	ItemPack ip;
 	// Check for fuel, and items to burn
 	if (minecraft->player && minecraft->player->inventory) {
@@ -311,13 +311,13 @@ void FurnaceScreen::recheckRecipes()
 		for (int i = Inventory::MAX_SELECTION_SIZE; i < inv->getContainerSize(); ++i) {
 			if (ItemInstance* item = inv->getItem(i)) {
 				// Fuel material
-				if (FurnaceTileEntity::isFuel(*item)) {
+				if (furnace->isFuelItem(*item)) {
 					CItem* ci = new CItem(*item, NULL, "");//item->getName());
 					//LOGI("Adding fuel: %s\n", item->getName());
 					listFuel.push_back(ci);
 				}
 				// Ingredient/burn material
-				if (recipes->isFurnaceItem(item->id)) {
+				if (furnace->isIngredient(item->id)) {
 					CItem* ci = new CItem(*item, NULL, "");//item->getName());
 					//LOGI("Adding item to burn: %s\n", item->getName());
 					listIngredient.push_back(ci);
@@ -370,10 +370,10 @@ bool FurnaceScreen::isAllowed( int slot )
 	const ItemInstance& item = *inventoryItems[slot];
 
 	if (selectedSlot == btnFuel.id)
-		return (FurnaceTileEntity::getBurnDuration(item) > 0);
+		return furnace->isFuelItem(item);
 	else
     if (selectedSlot == btnIngredient.id)
-		return !FurnaceRecipes::getInstance()->getResult(item.id).isNull();
+		return furnace->isIngredient(item.id);
 	return false;
 }
 
@@ -449,7 +449,7 @@ void FurnaceScreen::updateResult( const ItemInstance* item )
 		int id = (item? item->id : 0);
 		if (id == lastBurnTypeId) return;
 
-		ItemInstance burnResult = FurnaceRecipes::getInstance()->getResult(id);
+		ItemInstance burnResult = furnace->getRecipeResult(id);
 		if (!burnResult.isNull())
 			currentItemDesc = I18n::getDescriptionString(burnResult);
 		else

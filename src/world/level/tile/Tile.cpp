@@ -23,6 +23,7 @@
 #include "../../item/SaplingTileItem.h"
 #include "../../item/WoodTileItem.h"
 #include "../../item/ItemCategory.h"
+#include "../../aether/Aether.h"
 
 const int Tile::RENDERLAYER_OPAQUE          = 0;
 const int Tile::RENDERLAYER_ALPHATEST       = 1;
@@ -292,6 +293,9 @@ void Tile::initTiles() {
 	Item::items[wood->id] = (new WoodTileItem(wood->id - 256))->setCategory(ItemCategory::Structures)->setDescriptionId("wood");
 
 	Item::items[quartzBlock->id] = (new AuxDataTileItem(quartzBlock->id - 256, quartzBlock))->setCategory(ItemCategory::Structures)->setDescriptionId("quartzBlock");
+
+	// The Aether (Survival / Creative only): registers its tiles and their special items
+	Aether::initTiles();
 
     for (int i = 0; i < 256; i++) {
         if (Tile::tiles[i] != NULL) {

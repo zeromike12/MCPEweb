@@ -1,4 +1,5 @@
 #include "SignTileEntity.h"
+#include "../../../aether/Aether.h"
 #include "../../../../network/packet/SignUpdatePacket.h"
 #include "../../Level.h"
 SignTileEntity::SignTileEntity()
@@ -52,7 +53,8 @@ Packet* SignTileEntity::getUpdatePacket() {
 
 void SignTileEntity::setLevelAndPos( Level* level, int x, int y, int z ) {
 	super::setLevelAndPos(level, x, y, z);
-	if(level->getTile(x, y, z) != Tile::sign->id) {
+	int t = level->getTile(x, y, z);
+	if(t != Tile::sign->id && t != Tile::wallSign->id && t != Aether::aetherSign->id && t != Aether::aetherWallSign->id) {
 		remove = true;
 	}
 }

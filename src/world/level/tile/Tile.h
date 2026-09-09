@@ -355,10 +355,10 @@ protected:
     /*** Returns the item instance's auxValue when a TileItem is spawned from this Tile. */
     virtual int getSpawnResourcesAuxValue(int data);
 
-private:
+public:
 	Tile* init();
 	Tile* setCategory(int category);
-
+private:
 	bool containsX(const Vec3& v);
 	bool containsY(const Vec3& v);
 	bool containsZ(const Vec3& v);

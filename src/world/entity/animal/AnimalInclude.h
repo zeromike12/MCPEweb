@@ -6,5 +6,6 @@
 #include "Cow.h"
 #include "Pig.h"
 #include "Sheep.h"
+#include "AetherMobs.h"
 
 #endif /*NET_MINECRAFT_WORLD_ENTITY_ANIMAL__AnimalInclude_H__*/

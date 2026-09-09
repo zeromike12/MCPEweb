@@ -8,6 +8,7 @@
 #include "../Level.h"
 
 #include "Tile.h"
+#include "../dimension/Dimension.h"
 
 class TorchTile: public Tile
 {
@@ -71,7 +72,17 @@ public:
     void tick(Level* level, int x, int y, int z, Random* random) {
         super::tick(level, x, y, z, random);
         if (level->getData(x, y, z) == 0) onPlace(level, x, y, z);
+        // Overworld torches can't stay lit in the thin air of the Aether:
+        // they smoulder out, leaving a stick behind. Ambrosium torches
+        // (a subclass) override this.
+        if (!level->isClientSide && !staysLitInAether() && level->dimension && level->dimension->id == Dimension::AETHER) {
+            level->setTile(x, y, z, 0);
+            popResource(level, x, y, z, ItemInstance(Item::stick, 1, 0));
+            level->addParticle(PARTICLETYPE(smoke), x + 0.5f, y + 0.6f, z + 0.5f, 0, 0.02f, 0);
+        }
     }
+
+    virtual bool staysLitInAether() { return false; }
 
     void onPlace(Level* level, int x, int y, int z) {
         if (level->isSolidBlockingTile(x - 1, y, z)) {

@@ -180,6 +180,7 @@ public:
 	Level* level;
 	Level* overworldLevel;
 	Level* netherLevel;
+	Level* aetherLevel;
 	std::string currentLevelId;
 	std::string currentLevelName;
 	LevelSettings currentSettings;

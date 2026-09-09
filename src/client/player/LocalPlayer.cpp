@@ -109,7 +109,9 @@ void LocalPlayer::tick() {
 			if (portalCounter >= maxPortalTime) {
 				portalCounter = 0;
 				portalCooldown = 100;
-				int targetDim = (dimension == Dimension::NETHER ? Dimension::NORMAL : Dimension::NETHER);
+				int targetDim;
+				if (dimension == Dimension::NETHER || dimension == Dimension::AETHER) targetDim = Dimension::NORMAL;
+				else targetDim = (inPortalDim == Dimension::AETHER) ? Dimension::AETHER : Dimension::NETHER;
 				minecraft->switchDimension(targetDim);
 			}
 		}

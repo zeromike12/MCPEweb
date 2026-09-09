@@ -1,6 +1,7 @@
 #include "Dimension.h"
 #include "NormalDayCycleDimension.h"
 #include "NetherDimension.h"
+#include "../../aether/AetherDimension.h"
 
 //#include "../levelgen/SimpleLevelSource.h"
 #include "../levelgen/RandomLevelSource.h"
@@ -117,6 +118,7 @@ Dimension* Dimension::getNew( int id )
 	if (id == NORMAL) return new Dimension();
 	if (id == NORMAL_DAYCYCLE) return new NormalDayCycleDimension();
 	if (id == NETHER) return new NetherDimension();
+	if (id == AETHER) return new AetherDimension();
 	return NULL;
 }
 
@@ -130,6 +132,9 @@ Dimension* DimensionFactory::createDefaultDimension(LevelData* data )
 
 	if (data != NULL && data->getDimension() == Dimension::NETHER) {
 		return Dimension::getNew(Dimension::NETHER);
+	}
+	if (data != NULL && data->getDimension() == Dimension::AETHER) {
+		return Dimension::getNew(Dimension::AETHER);
 	}
 
 	switch(data->getGameType()) {

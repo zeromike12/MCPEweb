@@ -101,6 +101,7 @@
 #include "renderer/entity/EntityRenderDispatcher.h"
 #include "../world/level/portal/PortalForcer.h"
 #include "../world/level/dimension/Dimension.h"
+#include "../world/aether/Aether.h"
 #include "gui/Screen.h"
 #include "gui/Font.h"
 #include "gui/screens/RenameMPLevelScreen.h"
@@ -139,6 +140,7 @@ Minecraft::Minecraft()
 	level(NULL),
 	overworldLevel(NULL),
 	netherLevel(NULL),
+	aetherLevel(NULL),
 	currentSettings(LevelSettings::None()),
 	player(NULL),
 	cameraTargetPlayer(NULL),
@@ -267,6 +269,7 @@ void Minecraft::selectLevel( const std::string& levelId, const std::string& leve
 	currentSettings = settings;
 	overworldLevel = NULL;
 	netherLevel = NULL;
+	aetherLevel = NULL;
 
 #if defined(CREATORMODE)
 	level = new CreatorLevel(
@@ -297,6 +300,10 @@ void Minecraft::toggleDimension() {
 void Minecraft::switchDimension(int targetDim) {
 	LOGI("Minecraft::switchDimension -> %d\n", targetDim);
 	if (!player || !level) return;
+	if (!level->dimension || level->dimension->id == targetDim) return;
+
+	// The Aether only exists in Survival / Creative worlds
+	if (targetDim == Dimension::AETHER && !Aether::isAvailable(level)) return;
 
 	// Save current level state
 	if (level->getChunkSource()) {
@@ -304,49 +311,51 @@ void Minecraft::switchDimension(int targetDim) {
 	}
 	level->saveLevelData();
 
+	int currentDim = level->dimension->id;
 	float startX = player->x;
 	float startZ = player->z;
-	float targetX = (targetDim == Dimension::NETHER) ? (startX / 8.0f) : (startX * 8.0f);
-	float targetZ = (targetDim == Dimension::NETHER) ? (startZ / 8.0f) : (startZ * 8.0f);
+	// Nether coordinates are scaled 1:8; the Aether sits directly above the overworld (1:1)
+	float targetX = startX, targetZ = startZ;
+	if (targetDim == Dimension::NETHER) { targetX = startX / 8.0f; targetZ = startZ / 8.0f; }
+	else if (currentDim == Dimension::NETHER) { targetX = startX * 8.0f; targetZ = startZ * 8.0f; }
 
 	Level* oldLevel = level;
-	Level* nextLevel = NULL;
 
+	// Remember where we came from
+	if (currentDim == Dimension::NETHER) netherLevel = oldLevel;
+	else if (currentDim == Dimension::AETHER) aetherLevel = oldLevel;
+	else overworldLevel = oldLevel;
+
+	Level** slot = NULL;
+	Dimension* dim = NULL;
 	if (targetDim == Dimension::NETHER) {
-		overworldLevel = oldLevel;
-		if (netherLevel == NULL) {
-			Dimension* netherDim = Dimension::getNew(Dimension::NETHER);
-			netherLevel = new ServerLevel(
-				storageSource->selectLevel(currentLevelId, false),
-				currentLevelName,
-				currentSettings,
-				SharedConstants::GeneratorVersion,
-				netherDim
-			);
-			netherLevel->raknetInstance = raknetInstance;
-		}
-		nextLevel = netherLevel;
+		slot = &netherLevel;
+		if (netherLevel == NULL) dim = Dimension::getNew(Dimension::NETHER);
+	} else if (targetDim == Dimension::AETHER) {
+		slot = &aetherLevel;
+		if (aetherLevel == NULL) dim = Dimension::getNew(Dimension::AETHER);
 	} else {
-		netherLevel = oldLevel;
-		if (overworldLevel == NULL) {
-			Dimension* overworldDim = DimensionFactory::createDefaultDimension(level->getLevelData());
-			overworldLevel = new ServerLevel(
-				storageSource->selectLevel(currentLevelId, false),
-				currentLevelName,
-				currentSettings,
-				SharedConstants::GeneratorVersion,
-				overworldDim
-			);
-			overworldLevel->raknetInstance = raknetInstance;
-		}
-		nextLevel = overworldLevel;
+		slot = &overworldLevel;
+		if (overworldLevel == NULL) dim = DimensionFactory::createDefaultDimension(level->getLevelData());
 	}
+	if (*slot == NULL) {
+		*slot = new ServerLevel(
+			storageSource->selectLevel(currentLevelId, false),
+			currentLevelName,
+			currentSettings,
+			SharedConstants::GeneratorVersion,
+			dim
+		);
+		(*slot)->raknetInstance = raknetInstance;
+	}
+	Level* nextLevel = *slot;
 
 	// Switch active level
 	this->level = nextLevel;
 	gameMode->initLevel(nextLevel);
 
-	// Find or create destination portal
+	// Find or create destination portal (an Aether portal when travelling to / from the Aether)
+	PortalForcer::lastTripWasAether = (currentDim == Dimension::AETHER || targetDim == Dimension::AETHER);
 	float spawnX = targetX, spawnY = 64.0f, spawnZ = targetZ;
 	PortalForcer::findOrCreatePortal(nextLevel, (int)targetX, (int)targetZ, targetDim, spawnX, spawnY, spawnZ);
 
@@ -453,6 +462,11 @@ void Minecraft::leaveGame(bool renameLevel /*=false*/)
 		delete netherLevel->getLevelStorage();
 		delete netherLevel;
 	}
+	if (aetherLevel != NULL && aetherLevel != level) {
+		delete aetherLevel->getLevelStorage();
+		delete aetherLevel;
+	}
+	aetherLevel = NULL;
 	if (level != NULL) {
 		delete level->getLevelStorage();
 		delete level;

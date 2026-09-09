@@ -1,4 +1,5 @@
 #include "FurnaceRecipes.h"
+#include "../../aether/Aether.h"
 #include "../../level/tile/Tile.h"
 #include "../DyePowderItem.h"
 #include "../CoalItem.h"
@@ -46,6 +47,15 @@ FurnaceRecipes::FurnaceRecipes()
 	addFurnaceRecipe(Tile::stoneBrick->id,  ItemInstance(Tile::rock));
 	addFurnaceRecipe(Item::clay->id,        ItemInstance(Item::brick));
 	addFurnaceRecipe(Tile::cactus->id,      ItemInstance(Item::dye_powder, 1, DyePowderItem::GREEN));
+
+	// Aether
+	if (Aether::holystone) {
+		addFurnaceRecipe(Aether::holystone->id,    ItemInstance(Aether::holystoneBricks));
+		addFurnaceRecipe(Aether::quicksoil->id,    ItemInstance(Aether::quicksoilGlass));
+		addFurnaceRecipe(Aether::zaniteOre->id,    ItemInstance(Aether::zaniteGem));
+		addFurnaceRecipe(Aether::ambrosiumOre->id, ItemInstance(Aether::ambrosiumShard));
+		addFurnaceRecipe(Aether::mossyHolystone->id, ItemInstance(Aether::holystone));
+	}
 	addFurnaceRecipe(Tile::mushroom2->id, ItemInstance(Item::dye_powder, 1, DyePowderItem::RED));
 	addFurnaceRecipe(Tile::treeTrunk->id,   ItemInstance(Item::coal, 1, CoalItem::CHAR_COAL));
 	addFurnaceRecipe(Tile::netherrack->id,  ItemInstance(Item::netherbrick));

@@ -14,8 +14,11 @@ class FurnaceTileEntity: public TileEntity,
 						 public Container
 {
     typedef TileEntity super;
+protected:
     static const int BURN_INTERVAL = 10 * 20;
     static const int NumItems = 3;
+    // For subclasses (Aether altar / freezer / incubator) that use a different tile entity type
+    FurnaceTileEntity(int tileEntityType);
 public:
     FurnaceTileEntity();
 	~FurnaceTileEntity();
@@ -50,10 +53,20 @@ public:
 
 	void tick();
 
-    void burn();
+    virtual void burn();
 
 	static bool isFuel(const ItemInstance& itemInstance);
 	static int getBurnDuration(const ItemInstance& itemInstance);
+
+	// Per-instance hooks so furnace-like blocks can define their own fuel and recipes.
+	virtual int getFuelDuration(const ItemInstance& itemInstance) const;
+	virtual bool isFuelItem(const ItemInstance& itemInstance) const { return getFuelDuration(itemInstance) > 0; }
+	virtual ItemInstance getRecipeResult(int itemId) const;
+	virtual bool isIngredient(int itemId) const { return !getRecipeResult(itemId).isNull(); }
+	virtual std::string getFuelHint() const { return ""; }
+protected:
+	// Called when the lit state flips; swaps the level tile.
+	virtual void updateLitTile(bool lit);
 private:
     bool canBurn();
 	

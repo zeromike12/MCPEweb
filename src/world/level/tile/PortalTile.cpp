@@ -95,6 +95,7 @@ void PortalTile::neighborChanged(Level* level, int x, int y, int z, int type) {
 void PortalTile::entityInside(Level* level, int x, int y, int z, Entity* entity) {
 	if (entity != NULL) {
 		entity->inPortal = true;
+		entity->inPortalDim = -1; // Dimension::NETHER
 	}
 }
 

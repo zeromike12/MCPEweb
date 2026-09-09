@@ -1,3 +1,4 @@
+#include "../aether/Aether.h"
 #include "ItemInclude.h"
 #include "ItemCategory.h"
 #include "../level/tile/Tile.h"
@@ -102,9 +103,9 @@ Item* Item::painting = NULL;
 Item* Item::sign = NULL;
 Item* Item::door_wood = NULL;
 
-//Item* Item::bucket_empty = NULL;
-//Item* Item::bucket_water = NULL;
-//Item* Item::bucket_lava = NULL;
+Item* Item::bucket_empty = NULL;
+Item* Item::bucket_water = NULL;
+Item* Item::bucket_lava = NULL;
 
 //Item* Item::minecart = NULL;
 //Item* Item::saddle = NULL;
@@ -364,6 +365,9 @@ void Item::initItems() {
 	Item::scythe_soulreaper = (new RpgWeaponItem(237, 9, 1800, RpgGear::FX_SOUL))->setIcon(RPG_WEAPON_ICON[7])->setCategory(ItemCategory::Tools)->setDescriptionId("scytheSoulreaper");
 	Item::blade_wind = (new RpgWeaponItem(238, 7, 4000, RpgGear::FX_WIND))->setIcon(RPG_WEAPON_ICON[8])->setCategory(ItemCategory::Tools)->setDescriptionId("bladeWind");
 	Item::longbow_ranger = (new RpgLongbowItem(239))->setIcon(RPG_WEAPON_ICON[9])->setCategory(ItemCategory::Tools)->setDescriptionId("longbowRanger");
+
+	// Buckets + Aether items
+	Aether::initItems();
 
 	for (int i = 256; i < MAX_ITEMS; ++i) {
 		if (items[i] && items[i]->category == -1)

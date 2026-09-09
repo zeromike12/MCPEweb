@@ -6,6 +6,7 @@
 #include "../../../Container.h"
 #include "../../../entity/player/Player.h"
 //#include "../../../item/crafting/FurnaceRecipes.h"
+#include "../../../aether/Aether.h"
 #include "../../../item/ItemInstance.h"
 #include "../../../../nbt/ListTag.h"
 #include "../../../item/crafting/FurnaceRecipes.h"
@@ -20,6 +21,29 @@ FurnaceTileEntity::FurnaceTileEntity()
 	_canBeFinished(false)
 {
 	//LOGI("CREATING FurnaceTileEntity! %p\n", this);
+}
+
+FurnaceTileEntity::FurnaceTileEntity(int tileEntityType)
+:   super(tileEntityType),
+	Container(ContainerType::FURNACE),
+	litTime(0),
+	litDuration(0),
+	tickCount(0),
+	finished(false),
+	_canBeFinished(false)
+{
+}
+
+int FurnaceTileEntity::getFuelDuration(const ItemInstance& itemInstance) const {
+	return getBurnDuration(itemInstance);
+}
+
+ItemInstance FurnaceTileEntity::getRecipeResult(int itemId) const {
+	return FurnaceRecipes::getInstance()->getResult(itemId);
+}
+
+void FurnaceTileEntity::updateLitTile(bool lit) {
+	FurnaceTile::setLit(lit, level, x, y, z);
 }
 
 FurnaceTileEntity::~FurnaceTileEntity() {
@@ -88,7 +112,7 @@ void FurnaceTileEntity::load(CompoundTag* base) {
 
 	litTime = base->getShort("BurnTime");
 	tickCount = base->getShort("CookTime");
-	litDuration = getBurnDuration(items[SLOT_FUEL]);
+	litDuration = getFuelDuration(items[SLOT_FUEL]);
 }
 
 bool FurnaceTileEntity::save(CompoundTag* base) {
@@ -146,7 +170,7 @@ void FurnaceTileEntity::tick()
 
 	if (!level->isClientSide) {
 		if (litTime == 0 && canBurn()) {
-			litDuration = litTime = getBurnDuration(items[SLOT_FUEL]);
+			litDuration = litTime = getFuelDuration(items[SLOT_FUEL]);
 			if (litTime > 0) {
 				changed = true;
 				if (!items[SLOT_FUEL].isNull()) {
@@ -167,7 +191,7 @@ void FurnaceTileEntity::tick()
 
 		if (wasLit != (litTime > 0)) {
 			changed = true;
-			FurnaceTile::setLit(litTime > 0, level, x, y, z);
+			updateLitTile(litTime > 0);
 		}
 	}
 
@@ -188,7 +212,7 @@ bool FurnaceTileEntity::isFinished()
 void FurnaceTileEntity::burn() {
 	if (!canBurn()) return;
 
-	ItemInstance result = FurnaceRecipes::getInstance()->getResult(items[0].getItem()->id);
+	ItemInstance result = getRecipeResult(items[0].getItem()->id);
 	if (items[2].isNull()) items[2] = result;
 	else if (items[2].id == result.id) items[2].count++;
 
@@ -213,7 +237,7 @@ void FurnaceTileEntity::stopOpen() {
 
 bool FurnaceTileEntity::canBurn() {
 	if (items[SLOT_INGREDIENT].isNull()) return false;
-	ItemInstance burnResult = FurnaceRecipes::getInstance()->getResult(items[SLOT_INGREDIENT].getItem()->id);
+	ItemInstance burnResult = getRecipeResult(items[SLOT_INGREDIENT].getItem()->id);
 	if (burnResult.isNull()) return false;
 	if (items[SLOT_RESULT].isNull()) return true;
 	if (!items[SLOT_RESULT].sameItem(&burnResult)) return false;
@@ -233,6 +257,8 @@ int FurnaceTileEntity::getBurnDuration(const ItemInstance& itemInstance) {
 
 	if (id == Item::stick->id)  return BURN_INTERVAL / 2;
 	if (id == Item::coal->id)   return BURN_INTERVAL * 8;
+	if (Item::bucket_lava && id == Item::bucket_lava->id) return BURN_INTERVAL * 100;
+	if (Aether::ambrosiumShard && id == Aether::ambrosiumShard->id) return BURN_INTERVAL * 4;
 		//case Item::bucket_lava->id: return BURN_INTERVAL * 100;
 		//case Tile::sapling->id:     return BURN_INTERVAL / 2;
 		//case Item::blazeRod->id:    return BURN_INTERVAL * 12;

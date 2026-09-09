@@ -74,6 +74,10 @@ public:
 	float	getSpeed();
 	void	setSpeed(float speed);
 	void	setJumping(bool jump);
+	// Movement intent accessors (used by rideable mobs to read their rider's controls)
+	float	getXxa() const { return xxa; }
+	float	getYya() const { return yya; }
+	bool	isJumping() const { return jumping; }
 
 	virtual void tick();
 	virtual void baseTick();

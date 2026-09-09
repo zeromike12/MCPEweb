@@ -1,4 +1,5 @@
 #include "Recipes.h"
+#include "../../aether/Aether.h"
 #include "ShapedRecipe.h"
 #include "ShapelessRecipe.h"
 
@@ -25,6 +26,7 @@ Recipes::Recipes()
 	StructureRecipes::addRecipes(this);
 	ArmorRecipes::addRecipes(this);
 	ClothDyeRecipes::addRecipes(this);
+	Aether::addRecipes(this);
 
 	addShapedRecipe(ItemInstance(Item::paper, 3), //
 		"###", //

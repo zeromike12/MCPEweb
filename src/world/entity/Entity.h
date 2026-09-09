@@ -211,6 +211,7 @@ public:
 	bool invisible;
 	bool reallyRemoveIfPlayer;
 	bool inPortal;
+	int inPortalDim; // dimension id the portal we stand in leads to (Nether/Aether)
 protected:
 	static Random sharedRandom;
 	int airCapacity;
